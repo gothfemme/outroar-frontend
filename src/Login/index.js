@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Message, Button, Icon, Header, Form, Grid, Input, Container, Segment } from 'semantic-ui-react';
+import { Button, Header, Form, Grid, Container, Segment } from 'semantic-ui-react';
 import { Redirect, Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { sendAuth } from '../store';
