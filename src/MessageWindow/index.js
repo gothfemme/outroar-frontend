@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Loader, Header, Input, Segment, Container, Menu, Comment } from 'semantic-ui-react';
+import { Loader, Header, Input, Segment, Container, Comment } from 'semantic-ui-react';
 import Message from './Message';
 
 class MessageWindow extends Component {
@@ -52,7 +52,7 @@ class MessageWindow extends Component {
         {this.state.isLoading ? (<div style={{width:"100%", paddingTop:"45vh", paddingRight:"20rem"}}><Loader size="massive" inline='centered' active/></div>) : (<div style={{paddingTop:"5rem", marginRight:"25rem", paddingLeft:"2rem"}}>
           <Comment.Group style={{maxWidth:"100%"}}>
 
-            {this.state.isLoading ? null : this.state.messages.map(message => <Message message={message}/>)}
+            {this.state.isLoading ? null : this.state.messages.map(message => <Message key={message.id} message={message}/>)}
           </Comment.Group>
         </div>)}
         <Segment secondary style={{borderRadius:"0", position:"fixed", paddingRight:"21rem", bottom:"0", width:"100%"}}>

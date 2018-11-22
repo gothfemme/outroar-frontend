@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Header, Loader, Menu, Accordion, Icon } from 'semantic-ui-react';
+import { Menu, Accordion, Icon } from 'semantic-ui-react';
 import { connect } from 'react-redux';
 import { setCurrentConversation } from '../store';
 
@@ -72,6 +72,7 @@ class Sidebar extends Component {
 
 const mapStateToProps = (state) => {
   return {
+    currentUser: state.currentUser,
     conversations: state.conversations,
     currentConversation: state.currentConversation
   }
