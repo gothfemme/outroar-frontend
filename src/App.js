@@ -3,8 +3,17 @@ import { BrowserRouter, Route } from 'react-router-dom';
 import Login from './Login';
 import SignUp from './Login/SignUp';
 import MainContainer from './Main';
+import { connect } from 'react-redux';
+import { getCurrentUser } from './store';
 
 class App extends Component {
+
+  componentDidMount() {
+    if (localStorage.jwt) {
+      this.props.getCurrentUser()
+    }
+  }
+
   render() {
     return (
       <BrowserRouter>
@@ -18,4 +27,8 @@ class App extends Component {
   }
 }
 
-export default App;
+const mapDispatchToProps = (dispatch) => {
+  return { getCurrentUser: () => dispatch(getCurrentUser()) }
+}
+
+export default connect(null, mapDispatchToProps)(App);

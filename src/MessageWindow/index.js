@@ -2,32 +2,35 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Loader, Header, Input, Segment, Container, Comment } from 'semantic-ui-react';
 import Message from './Message';
+import { sendMessage } from '../store';
 
 class MessageWindow extends Component {
   state = {
     message: "",
-    isLoading: true,
-    messages: []
+    isLoading: false,
+    // messages: []
   }
 
   handleSubmit = (e) => {
     e.preventDefault()
+
+    const newMessage = {
+      content: this.state.message,
+      conversation_id: this.props.currentConversation.id
+    }
+
+    this.props.sendMessage(newMessage)
+      .then(json => {
+        this.props.currentPeers.forEach(peer => {
+          // console.log(peer)
+          if (peer.connected) {
+
+            peer.send(json)
+          }
+        })
+      })
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevProps.currentConversation !== this.props.currentConversation) {
-      console.log('aaaaa')
-      fetch(`http://localhost:3000/conversations/${this.props.currentConversation.id}`)
-        .then(r => r.json())
-        .then(json => {
-          console.log(json)
-          this.setState({
-            messages: json.messages,
-            isLoading: false
-          });
-        })
-    }
-  }
 
   handleChange = (e) => {
     this.setState({
@@ -52,7 +55,7 @@ class MessageWindow extends Component {
         {this.state.isLoading ? (<div style={{width:"100%", paddingTop:"45vh", paddingRight:"20rem"}}><Loader size="massive" inline='centered' active/></div>) : (<div style={{paddingTop:"5rem", marginRight:"25rem", paddingLeft:"2rem"}}>
           <Comment.Group style={{maxWidth:"100%"}}>
 
-            {this.state.isLoading ? null : this.state.messages.map(message => <Message key={message.id} message={message}/>)}
+            {this.state.isLoading ? null : this.props.currentConversation.messages.map(message => <Message key={message.id} message={message}/>)}
           </Comment.Group>
         </div>)}
         <Segment secondary style={{borderRadius:"0", position:"fixed", paddingRight:"21rem", bottom:"0", width:"100%"}}>
@@ -76,7 +79,13 @@ class MessageWindow extends Component {
 }
 
 const mapStateToProps = (state) => {
-  return { currentConversation: state.currentConversation }
+  return { currentUser: state.user, currentConversation: state.currentConversation, currentPeers: state.peers.filter(peer => peer.conversation === state.currentConversation.id) }
 }
 
-export default connect(mapStateToProps)(MessageWindow);
+const mapDispatchToProps = (dispatch) => {
+  return {
+    sendMessage: (message) => dispatch(sendMessage(message))
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(MessageWindow);

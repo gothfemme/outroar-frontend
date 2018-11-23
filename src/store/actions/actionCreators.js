@@ -1,4 +1,4 @@
-import { getToken, getSplash } from './adapter';
+import { getToken, getSplash, fetchCurrentUser, fetchCurrentConversation, postMessage } from './adapter';
 
 // actions
 
@@ -23,8 +23,45 @@ export const setCurrentConversation = (conversation) => {
   }
 }
 
+export const addPeer = (peer) => {
+  return {
+    type: "ADD_PEER",
+    payload: peer
+  }
+}
+
+export const addMessage = (message) => {
+  return {
+    type: "ADD_MESSAGE",
+    payload: message
+  }
+}
 
 // thunks
+
+export const sendMessage = (message) => {
+  return (dispatch) => {
+    return postMessage(message)
+      .then(resp => dispatch(addMessage(resp)))
+      .catch(console.error)
+  }
+}
+
+export const getCurrentConversation = (id) => {
+  return (dispatch) => {
+    fetchCurrentConversation(id)
+      .then(resp => dispatch(setCurrentConversation(resp)))
+      .catch(console.error)
+  }
+}
+
+export const getCurrentUser = () => {
+  return (dispatch) => {
+    fetchCurrentUser()
+      .then(resp => dispatch(setUser(resp)))
+      .catch(console.error)
+  }
+}
 
 export const sendAuth = (data) => {
   return (dispatch) => {
@@ -46,3 +83,5 @@ export const fetchSplash = () => {
       .catch(console.error)
   }
 }
+
+// export const getCurrentMessages = () => {}

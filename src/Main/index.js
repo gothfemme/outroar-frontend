@@ -4,7 +4,7 @@ import MessageWindow from '../MessageWindow';
 import { Loader } from 'semantic-ui-react';
 import { ActionCableProvider, ActionCable } from 'react-actioncable-provider';
 import { connect } from 'react-redux';
-import { fetchSplash } from '../store';
+import { fetchSplash, addPeer } from '../store';
 import Peer from 'simple-peer';
 // import { createSignalingPeer, createPeer } from '../peerCreators';
 
@@ -16,55 +16,55 @@ class MainContainer extends Component {
   }
 
   componentDidMount() {
-    // console.log("mounted")
     this.props.populateSplash()
   }
 
   handleReceive = (resp) => {
-    // console.log(resp)
     if (resp.action === "send_signal") {
-      this.createPeer(resp)
+      this.createResponsePeer(resp)
     }
   }
 
   createSignalingPeer = (id) => {
-    let peer = new Peer({ initiator: true, trickle: false })
-      .on('signal', data => {
-        this.refs.signalServer.perform('send_signal', { payload: data, to: id, conversation: this.props.currentConversation.id })
-      })
-    this.setState({
-      peers: [...this.state.peers.filter(obj => obj.id !== id && obj.conversation !== this.props.conversation), { peerObj: peer, id: id, conversation: this.props.currentConversation.id }]
-    });
-    return peer
+    let peer = Peer({ initiator: true, trickle: false })
+    peer.on('signal', data => {
+      this.refs.signalServer.perform('send_signal', { payload: data, to: id, conversation: this.props.currentConversation.id })
+    })
+    peer.id = id
+    peer.conversation = this.props.currentConversation.id
+    this.props.addPeer(peer)
   }
 
-  createPeer = (resp) => {
+  createResponsePeer = (resp) => {
     console.log(resp)
     let peer;
-    peer = this.state.peers.find(peer => peer.conversation === resp.conversation && peer.id === resp.from)
-    // debugger
-    peer = peer && peer.peerObj
+    peer = this.props.peers.find(peer => peer.conversation === resp.conversation && peer.id === resp.from)
     if (!peer) {
-      peer = new Peer({ trickle: false })
-        .on('signal', data => {
-          this.refs.signalServer.perform('send_signal', { payload: data, to: resp.from, conversation: resp.conversation })
-        })
+      peer = Peer({ trickle: false })
+      peer.on('signal', data => {
+        this.refs.signalServer.perform('send_signal', { payload: data, to: resp.from, conversation: resp.conversation })
+      })
+
       console.log("new peer i guess?")
     }
+    //upgrade peer with new listeners
     peer.on('connect', () => {
-        console.log('hit connect')
-      })
-      .on('data', raw => {
-        console.log(raw.toString())
-      })
-      .on('stream', stream => {
-        console.log(stream)
-      })
-      .signal(resp.payload)
-    this.setState({
-      peers: [...this.state.peers.filter(obj => obj.id !== resp.from && obj.conversation !== this.props.conversation), { peerObj: peer, id: resp.from, conversation: resp.currentConversation }]
-    });
-    return peer
+      console.log('hit connect')
+    })
+    peer.on('data', raw => {
+      console.log(raw.toString())
+    })
+    peer.on('stream', stream => {
+      console.log(stream)
+    })
+    peer.on('error', (error) => {
+      console.error('peer error', error)
+    })
+    peer.signal(resp.payload)
+    peer.id = resp.from
+    peer.conversation = resp.conversation
+    this.props.addPeer(peer)
+    // return peer
   }
 
   handleConnect = () => {
@@ -76,11 +76,11 @@ class MainContainer extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if ((this.state.connected && this.state.connected !== prevState.connected) || (this.state.connected && this.props.conversations !== prevProps.conversations)) {
-      // console.log(this.props.conversations)
-    }
     if (this.props.currentConversation !== prevProps.currentConversation) {
-      this.props.currentConversation.users.forEach(user => {
+      let nonConnectedUsers = this.props.currentConversation.users.filter(user =>
+        !(this.props.peers.find(peer => peer.id === user.id && peer.conversation === this.props.currentConversation.id && peer.connected)))
+      nonConnectedUsers.forEach(user => {
+        console.log(user)
         this.createSignalingPeer(user.id)
       })
     }
@@ -111,11 +111,19 @@ class MainContainer extends Component {
 }
 
 const mapStateToProps = (state) => {
-  return { conversations: state.conversations, currentConversation: state.currentConversation }
+  return {
+    currentUser: state.user,
+    conversations: state.conversations,
+    currentConversation: state.currentConversation,
+    peers: state.peers
+  }
 }
 
 const mapDispatchToProps = (dispatch) => {
-  return { populateSplash: () => dispatch(fetchSplash()) }
+  return {
+    populateSplash: () => dispatch(fetchSplash()),
+    addPeer: (peer) => dispatch(addPeer(peer))
+  }
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(MainContainer);

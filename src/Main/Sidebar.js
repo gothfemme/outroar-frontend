@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Menu, Accordion, Icon } from 'semantic-ui-react';
 import { connect } from 'react-redux';
-import { setCurrentConversation } from '../store';
+import { getCurrentConversation } from '../store';
 
 class Sidebar extends Component {
   state = {
@@ -22,8 +22,8 @@ class Sidebar extends Component {
     this.setState({ activeIndex: newState });
   };
 
-  handleConversationClick = (c) => {
-    this.props.setCurrentConversation(c)
+  handleConversationClick = (id) => {
+    this.props.getCurrentConversation(id)
   }
 
   render() {
@@ -46,7 +46,7 @@ class Sidebar extends Component {
             />
             <Accordion.Content active={activeIndex.includes(0)}>
               {this.props.conversations.map(c => {
-                return <Menu.Item active={c.id === this.props.currentConversation.id} onClick={() => this.handleConversationClick(c)} key={c.id} link>{c.name ? c.name : c.users.map(userObj => userObj.username).join(',  ')}</Menu.Item>
+                return <Menu.Item active={c.id === this.props.currentConversation.id} onClick={() => this.handleConversationClick(c.id)} key={c.id} link>{c.name ? c.name : c.users.map(userObj => userObj.username).join(',  ')}</Menu.Item>
               })}
             </Accordion.Content>
 
@@ -80,7 +80,7 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    setCurrentConversation: (conversation) => dispatch(setCurrentConversation(conversation))
+    getCurrentConversation: (id) => dispatch(getCurrentConversation(id))
   }
 }
 
