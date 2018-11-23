@@ -32,13 +32,15 @@ class MainContainer extends Component {
     })
     peer.id = id
     peer.conversation = this.props.currentConversation.id
-    this.props.addPeer(peer)
+    this.setState({
+      peers: [this.state.peers.filter(p => p.id !== peer.id && p.conversation !== peer.conversation), peer]
+    });
+    // this.props.addPeer(peer)
   }
 
   createResponsePeer = (resp) => {
     console.log(resp)
-    let peer;
-    peer = this.props.peers.find(peer => peer.conversation === resp.conversation && peer.id === resp.from)
+    let peer = this.state.peers.find(peer => peer.conversation === resp.conversation && peer.id === resp.from)
     if (!peer) {
       peer = Peer({ trickle: false })
       peer.on('signal', data => {
@@ -52,7 +54,7 @@ class MainContainer extends Component {
       console.log('hit connect')
     })
     peer.on('data', raw => {
-      console.log(raw.toString())
+      this.props.addMessage(JSON.parse(raw.toString()))
     })
     peer.on('stream', stream => {
       console.log(stream)
@@ -63,7 +65,10 @@ class MainContainer extends Component {
     peer.signal(resp.payload)
     peer.id = resp.from
     peer.conversation = resp.conversation
-    this.props.addPeer(peer)
+    this.setState({
+      peers: [this.state.peers.filter(p => p.id !== peer.id && p.conversation !== peer.conversation), peer]
+    });
+    // this.props.addPeer(peer)
     // return peer
   }
 
@@ -76,12 +81,15 @@ class MainContainer extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (this.props.currentConversation !== prevProps.currentConversation) {
+    if (this.props.currentConversation.id !== prevProps.currentConversation.id) {
       let nonConnectedUsers = this.props.currentConversation.users.filter(user =>
-        !(this.props.peers.find(peer => peer.id === user.id && peer.conversation === this.props.currentConversation.id && peer.connected)))
+        !(this.state.peers.find(peer => peer.id === user.id && peer.conversation === this.props.currentConversation.id && peer.connected)))
       nonConnectedUsers.forEach(user => {
-        console.log(user)
-        this.createSignalingPeer(user.id)
+        if (user.id !== this.props.currentUser.id) {
+          console.log(user)
+
+          this.createSignalingPeer(user.id)
+        }
       })
     }
   }
@@ -100,7 +108,7 @@ class MainContainer extends Component {
     ) : (
       <div>
         {/* <button onClick={this.testSocket}></button> */}
-        <MessageWindow />
+        <MessageWindow currentPeers={this.state.peers.filter(peer => peer.conversation === this.props.currentConversation.id)} />
         <Sidebar />
       </div>
     )}
@@ -114,15 +122,15 @@ const mapStateToProps = (state) => {
   return {
     currentUser: state.user,
     conversations: state.conversations,
-    currentConversation: state.currentConversation,
-    peers: state.peers
+    currentConversation: state.currentConversation
   }
 }
 
 const mapDispatchToProps = (dispatch) => {
   return {
     populateSplash: () => dispatch(fetchSplash()),
-    addPeer: (peer) => dispatch(addPeer(peer))
+    addPeer: (peer) => dispatch(addPeer(peer)),
+    addMessage: (action) => dispatch(action)
   }
 }
 
