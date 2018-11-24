@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
-import Sidebar from './Sidebar';
-import MessageWindow from '../MessageWindow';
-import { Loader } from 'semantic-ui-react';
-import { ActionCableProvider, ActionCable } from 'react-actioncable-provider';
+// import Sidebar from './Sidebar';
+// import MessageWindow from '../MessageWindow';
+import { Input, Container, Header, Loader } from 'semantic-ui-react';
 import { connect } from 'react-redux';
 import { fetchSplash, addPeer } from '../store';
 import Peer from 'simple-peer';
@@ -16,7 +15,10 @@ class MainContainer extends Component {
   }
 
   componentDidMount() {
-    this.props.populateSplash()
+    this.setState({
+      isLoading: false
+    });
+    // this.props.populateSplash()
   }
 
   handleReceive = (resp) => {
@@ -72,47 +74,38 @@ class MainContainer extends Component {
     // return peer
   }
 
-  handleConnect = () => {
-    console.log("connected to websocket")
-    this.setState({
-      connected: true,
-      isLoading: false
-    });
-  }
-
   componentDidUpdate(prevProps, prevState) {
-    if (this.props.currentConversation.id !== prevProps.currentConversation.id) {
-      let nonConnectedUsers = this.props.currentConversation.users.filter(user =>
-        !(this.state.peers.find(peer => peer.id === user.id && peer.conversation === this.props.currentConversation.id && peer.connected)))
-      nonConnectedUsers.forEach(user => {
-        if (user.id !== this.props.currentUser.id) {
-          console.log(user)
-
-          this.createSignalingPeer(user.id)
-        }
-      })
-    }
-  }
-
-  testSocket = () => {
-    this.refs.signalServer.perform("send_signal", { payload: "hi", to: 2 })
+    // if (this.props.currentConversation.id !== prevProps.currentConversation.id) {
+    //   let nonConnectedUsers = this.props.currentConversation.users.filter(user =>
+    //     !(this.state.peers.find(peer => peer.id === user.id && peer.conversation === this.props.currentConversation.id && peer.connected)))
+    //   nonConnectedUsers.forEach(user => {
+    //     if (user.id !== this.props.currentUser.id) {
+    //       console.log(user)
+    //
+    //       this.createSignalingPeer(user.id)
+    //     }
+    //   })
+    // }
   }
 
   render() {
     const loadingPhrases = ["Reticulating Splines...", "Loading..."]
     return (
-      <ActionCableProvider url="ws://localhost:3000/cable">
-      <ActionCable ref="signalServer" channel={{channel:"SignalChannel", token:localStorage.jwt}} onReceived={this.handleReceive} onConnected={this.handleConnect}/>
+      <React.Fragment>
+      {/* <ActionCable ref="signalServer" channel={{channel:"SignalChannel", token:localStorage.jwt}} onReceived={this.handleReceive} onConnected={this.handleConnect}/> */}
     {(this.state.isLoading) ? (
       <Loader size="massive" active>{loadingPhrases[Math.floor(Math.random()*loadingPhrases.length)]}</Loader>
     ) : (
       <div>
         {/* <button onClick={this.testSocket}></button> */}
-        <MessageWindow currentPeers={this.state.peers.filter(peer => peer.conversation === this.props.currentConversation.id)} />
-        <Sidebar />
+        <Container style={{height:"100vh", width:"100vw"}} textAlign="center">
+          <Header color="pink" style={{fontFamily: "'Fredoka One', cursive", paddingTop:"33vh", fontSize:"5rem"}}>outroar</Header>
+          <Input placeholder="Find a channel..."></Input>
+        </Container>
+        {/* <Sidebar /> */}
       </div>
     )}
-    </ActionCableProvider>
+  </React.Fragment>
     );
   }
 
