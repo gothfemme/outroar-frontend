@@ -1,13 +1,14 @@
 import React, { Component } from 'react';
 import { Button, Header, Form, Grid, Container, Segment } from 'semantic-ui-react';
 import { Redirect, Link } from 'react-router-dom';
+import { createUser } from '../store';
+import { connect } from 'react-redux';
 
 class SignUp extends Component {
   state = {
-    email: "",
     username: "",
     password: "",
-    passwordConfirmation: ""
+    password_confirmation: ""
   }
 
   handleChange = (e, { name, value }) => {
@@ -18,10 +19,10 @@ class SignUp extends Component {
 
   handleSubmit = (e) => {
     e.preventDefault()
-    // fetch
-    // render errors if any
-    // add user to store
-    // redirect to splash
+    console.log(this.state)
+    this.props.createUser(this.state)
+      .then(token => localStorage.setItem("jwt", token))
+      .then(() => this.props.history.push('/'))
   }
 
   render() {
@@ -38,9 +39,8 @@ class SignUp extends Component {
             <Segment>
         <Form onSubmit={this.handleSubmit}>
           <Form.Input icon="user" iconPosition="left" onChange={this.handleChange} name="username" value={this.state.username} placeholder="Username"/>
-          <Form.Input icon="mail" iconPosition="left" onChange={this.handleChange} name="email" value={this.state.email} placeholder="example@email.com"/>
           <Form.Input icon="lock" type="password" iconPosition="left" onChange={this.handleChange} name="password" value={this.state.password} placeholder="Password"/>
-          <Form.Input icon="lock" type="password" iconPosition="left" onChange={this.handleChange} name="passwordConfirmation" value={this.state.passwordConfirmation} placeholder="Password Confirmation"/>
+          <Form.Input icon="lock" type="password" iconPosition="left" onChange={this.handleChange} name="password_confirmation" value={this.state.password_confirmation} placeholder="Password Confirmation"/>
           <Button color='pink' fluid size='large'>
             Sign Up
           </Button>
@@ -56,4 +56,10 @@ class SignUp extends Component {
 
 }
 
-export default SignUp;
+const mapDispatchToProps = (dispatch) => {
+  return {
+    createUser: (data) => dispatch(createUser(data))
+  }
+}
+
+export default connect(null, mapDispatchToProps)(SignUp);

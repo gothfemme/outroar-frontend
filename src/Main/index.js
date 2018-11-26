@@ -1,111 +1,101 @@
 import React, { Component } from 'react';
-// import Sidebar from './Sidebar';
-// import MessageWindow from '../MessageWindow';
-import { Input, Container, Header, Loader } from 'semantic-ui-react';
+import { List, Popup, Input, Icon, Container, Header, Loader } from 'semantic-ui-react';
+import SearchListing from './SearchListing';
 import { connect } from 'react-redux';
 import { fetchSplash, addPeer } from '../store';
-import Peer from 'simple-peer';
-// import { createSignalingPeer, createPeer } from '../peerCreators';
+import { searchConversations } from '../store/actions/adapter';
 
 class MainContainer extends Component {
   state = {
+    search: "",
     isLoading: true,
-    connected: false,
-    peers: []
+    isSearchLoading: false,
+    isSearching: false,
+    viewingFavorites: false,
+    channels: []
   }
 
   componentDidMount() {
     this.setState({
       isLoading: false
-    });
-    // this.props.populateSplash()
-  }
-
-  handleReceive = (resp) => {
-    if (resp.action === "send_signal") {
-      this.createResponsePeer(resp)
-    }
-  }
-
-  createSignalingPeer = (id) => {
-    let peer = Peer({ initiator: true, trickle: false })
-    peer.on('signal', data => {
-      this.refs.signalServer.perform('send_signal', { payload: data, to: id, conversation: this.props.currentConversation.id })
     })
-    peer.id = id
-    peer.conversation = this.props.currentConversation.id
+  }
+
+  toggleFavorites = () => {
     this.setState({
-      peers: [this.state.peers.filter(p => p.id !== peer.id && p.conversation !== peer.conversation), peer]
-    });
-    // this.props.addPeer(peer)
+      viewingFavorites: !this.state.viewingFavorites
+    })
   }
 
-  createResponsePeer = (resp) => {
-    console.log(resp)
-    let peer = this.state.peers.find(peer => peer.conversation === resp.conversation && peer.id === resp.from)
-    if (!peer) {
-      peer = Peer({ trickle: false })
-      peer.on('signal', data => {
-        this.refs.signalServer.perform('send_signal', { payload: data, to: resp.from, conversation: resp.conversation })
-      })
-
-      console.log("new peer i guess?")
+  handleChange = (e) => {
+    if (e.target.value.length === 0 || !e.target.value.trim()) {
+      return this.setState({
+        search: "",
+        isSearching: false,
+        isSearchLoading: false,
+        channels: []
+      });
     }
-    //upgrade peer with new listeners
-    peer.on('connect', () => {
-      console.log('hit connect')
-    })
-    peer.on('data', raw => {
-      this.props.addMessage(JSON.parse(raw.toString()))
-    })
-    peer.on('stream', stream => {
-      console.log(stream)
-    })
-    peer.on('error', (error) => {
-      console.error('peer error', error)
-    })
-    peer.signal(resp.payload)
-    peer.id = resp.from
-    peer.conversation = resp.conversation
     this.setState({
-      peers: [this.state.peers.filter(p => p.id !== peer.id && p.conversation !== peer.conversation), peer]
-    });
-    // this.props.addPeer(peer)
-    // return peer
+      search: e.target.value,
+      isSearchLoading: true,
+      isSearching: true,
+      viewingFavorites: false
+    }, () => {
+      searchConversations(this.state.search)
+        .then(res => {
+          console.log(res)
+          this.setState({
+            channels: res,
+            isSearchLoading: false
+          });
+        })
+    })
   }
 
-  componentDidUpdate(prevProps, prevState) {
-    // if (this.props.currentConversation.id !== prevProps.currentConversation.id) {
-    //   let nonConnectedUsers = this.props.currentConversation.users.filter(user =>
-    //     !(this.state.peers.find(peer => peer.id === user.id && peer.conversation === this.props.currentConversation.id && peer.connected)))
-    //   nonConnectedUsers.forEach(user => {
-    //     if (user.id !== this.props.currentUser.id) {
-    //       console.log(user)
-    //
-    //       this.createSignalingPeer(user.id)
-    //     }
-    //   })
-    // }
+  handleLogOut = () => {
+    localStorage.clear()
+    this.props.history.push('/login')
   }
 
   render() {
     const loadingPhrases = ["Reticulating Splines...", "Loading..."]
+    let { viewingFavorites, isSearchLoading, isLoading, isSearching, search, channels } = this.state
     return (
       <React.Fragment>
-      {/* <ActionCable ref="signalServer" channel={{channel:"SignalChannel", token:localStorage.jwt}} onReceived={this.handleReceive} onConnected={this.handleConnect}/> */}
-    {(this.state.isLoading) ? (
-      <Loader size="massive" active>{loadingPhrases[Math.floor(Math.random()*loadingPhrases.length)]}</Loader>
-    ) : (
-      <div>
-        {/* <button onClick={this.testSocket}></button> */}
-        <Container style={{height:"100vh", width:"100vw"}} textAlign="center">
-          <Header color="pink" style={{fontFamily: "'Fredoka One', cursive", paddingTop:"33vh", fontSize:"5rem"}}>outroar</Header>
-          <Input placeholder="Find a channel..."></Input>
-        </Container>
-        {/* <Sidebar /> */}
-      </div>
-    )}
-  </React.Fragment>
+        {(isLoading) ? (
+          <Loader size="massive" active>{loadingPhrases[Math.floor(Math.random()*loadingPhrases.length)]}</Loader>
+          ) : (
+          <div>
+            <Container style={{height:"100vh", width:"100vw"}} textAlign="center">
+              <Popup
+                inverted
+                content="Log out?"
+                trigger={
+              <div style={{ marginRight:"1rem", float:"right", cursor:"pointer"}}>
+                <Icon color="grey" onClick={this.handleLogOut} size="big" name="log out"></Icon>
+              </div>} />
+              <Header color="pink" style={{fontFamily: "'Fredoka One', cursive", paddingTop:"10vh", fontSize:"5rem"}}>outroar</Header>
+              <Container style={{textAlign:"center"}}>
+                <Input  input={<input onChange={this.handleChange} value={search}></input>} loading={isSearchLoading} icon="search" style={{width:"35vw", marginRight:"1.5rem"}} placeholder="Find a channel..."></Input>
+                <Popup
+                  content="View favorite channels"
+                  trigger={<Icon onClick={this.toggleFavorites} color={viewingFavorites ? "yellow" : "grey"} size="big" style={{ verticalAlign:"-0.25rem", cursor:"pointer" }} name={viewingFavorites ? "star" : "star outline"} />}
+                  position="top center"
+                  inverted
+                 />
+                 <List divided relaxed style={{width:"35vw", textAlign:"left", marginRight:"auto", marginLeft:"auto"}}>
+                   {channels.map(channel => <SearchListing key={channel.id} channel={channel}/>)}
+                   {isSearching && !isSearchLoading && channels.length === 0 ? (<List.Item>
+      <List.Icon name='question' />
+      <List.Content>No results found for {this.state.search}. Create a new channel with that name?</List.Content>
+    </List.Item>) : null}
+                </List>
+              </Container>
+            </Container>
+          </div>
+        )}
+      </React.Fragment>
     );
   }
 
@@ -114,8 +104,8 @@ class MainContainer extends Component {
 const mapStateToProps = (state) => {
   return {
     currentUser: state.user,
-    conversations: state.conversations,
-    currentConversation: state.currentConversation
+    // conversations: state.conversations,
+    // currentConversation: state.currentConversation
   }
 }
 

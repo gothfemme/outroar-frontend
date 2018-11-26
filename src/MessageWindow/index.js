@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Icon, Ref, Loader, Header, Input, Segment, Comment } from 'semantic-ui-react';
+import { Popup, Icon, Ref, Loader, Header, Input, Segment, Comment } from 'semantic-ui-react';
 import Message from './Message';
 import Peer from 'simple-peer';
 import { ActionCable } from 'react-actioncable-provider';
-import { sendMessage, getCurrentConversation } from '../store';
+import { sendMessage, getCurrentConversation, setCurrentConversation } from '../store';
 
 class MessageWindow extends Component {
   constructor() {
@@ -17,7 +17,7 @@ class MessageWindow extends Component {
     isLoading: true,
     isVideoCall: false,
     messageContainer: null,
-    currentUserVideo: "",
+    currentUserVideo: { stream: null, url: "" },
     peerStreams: {}
   }
 
@@ -85,7 +85,7 @@ class MessageWindow extends Component {
       .then(stream => {
         this.setState({
           isVideoCall: true,
-          currentUserVideo: window.URL.createObjectURL(stream)
+          currentUserVideo: { stream: stream, url: window.URL.createObjectURL(stream) }
         });
         Object.values(this.peers).forEach(peer => {
           if (peer.connected) {
@@ -156,6 +156,14 @@ class MessageWindow extends Component {
     console.log("connected to websocket")
   }
 
+  leaveChannel = () => {
+    if (this.state.currentUserVideo.stream) {
+      this.state.currentUserVideo.stream.getTracks().forEach(track => track.stop())
+    }
+    this.props.removeCurrentConversation()
+    this.props.history.push('/')
+  }
+
   render() {
     const conversation = this.props.currentConversation
     return (
@@ -168,7 +176,23 @@ class MessageWindow extends Component {
         <div style={{height:"100vh", width:"100vw", display: "flex", flexDirection: "column"}}>
 
         <Segment textAlign="center" size="big" style={{borderRadius:"0", flex:"0 0 auto", width:"100%", zIndex:"2", marginBottom:"0"}}>
-          <Icon onClick={this.startVideo} name="video" style={{float:"left"}}></Icon>
+          <span style={{float:"left"}}>
+          <Popup
+            inverted
+            position="bottom left"
+            content="Back"
+            trigger={
+          <Icon link onClick={this.leaveChannel} name="bars" style={{cursor:"pointer"}}></Icon>}
+        />
+      </span>
+
+          <Popup
+            inverted
+            position="bottom right"
+            content="Start video"
+            trigger={
+          <i onClick={this.startVideo} className={`link fas fa-video${this.state.currentUserVideo.stream ? "-slash" : ""}`} style={{float:"right", cursor:"pointer"}}></i>}
+        />
           <Header as="h5" style={{display:"inline"}}>{conversation.name ? conversation.name : conversation.users.map(userObj =>  userObj.username).join(', ')}</Header>
         </Segment>
 
@@ -176,10 +200,10 @@ class MessageWindow extends Component {
 
             <Segment inverted style={{ borderRadius:"0", display:"flex", margin:"0", flexDirection:"row", flexBasis:"auto", minHeight:"50vh", flexWrap:"wrap", alignItems:"center", justifyContent:"space-between"}}>
 
-              <div style={{textAlign:"center", flex:"1 1 auto", height:"33vh"}}>
-              <video muted autoPlay={true} src={this.state.currentUserVideo} style={{height:"100%"}}>
+              {this.state.currentUserVideo ? <div style={{textAlign:"center", flex:"1 1 auto", height:"33vh"}}>
+              <video muted autoPlay={true} src={this.state.currentUserVideo.url} style={{height:"100%"}}>
               </video>
-            </div>
+            </div> : null}
             {Object.values(this.state.peerStreams).map(stream => (
               <div style={{textAlign:"center", flex:"1 1 auto", height:"33vh"}}>
               <video autoPlay={true} src={stream} style={{height:"100%"}}>
@@ -190,7 +214,7 @@ class MessageWindow extends Component {
         ) : null}
 
           <Ref innerRef={this.handleRef}>
-          <Comment.Group style={{padding:"1rem", overflowY:"scroll", margin:"0", maxWidth:"100%"}}>
+          <Comment.Group style={{padding:"1rem", overflowY:"scroll", margin:"0", maxWidth:"100%", flex:"1 1 100%"}}>
 
             {this.props.currentConversation.messages.map(message => <Message key={message.id} message={message}/>)}
           </Comment.Group>
@@ -218,13 +242,17 @@ class MessageWindow extends Component {
 }
 
 const mapStateToProps = (state) => {
-  return { currentUser: state.user, currentConversation: state.currentConversation }
+  return {
+    currentUser: state.user,
+    currentConversation: state.currentConversation
+  }
 }
 
 const mapDispatchToProps = (dispatch) => {
   return {
     sendMessage: (message) => dispatch(sendMessage(message)),
     addMessage: (action) => dispatch(action),
+    removeCurrentConversation: () => dispatch(setCurrentConversation({})),
     getCurrentConversation: (id) => dispatch(getCurrentConversation(id))
   }
 }

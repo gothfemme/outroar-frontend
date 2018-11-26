@@ -1,4 +1,4 @@
-import { getToken, getSplash, fetchCurrentUser, fetchCurrentConversation, postMessage } from './adapter';
+import { getToken, getSplash, fetchCurrentUser, fetchCurrentConversation, postMessage, postUser } from './adapter';
 
 // actions
 
@@ -58,7 +58,21 @@ export const getCurrentConversation = (id) => {
 export const getCurrentUser = () => {
   return (dispatch) => {
     fetchCurrentUser()
-      .then(resp => dispatch(setUser(resp)))
+      .then(resp => {
+        dispatch(setUser(resp))
+        // return resp.token
+      })
+      .catch(console.error)
+  }
+}
+
+export const createUser = (data) => {
+  return (dispatch) => {
+    return postUser(data)
+      .then(resp => {
+        dispatch(setUser(resp.user))
+        return resp.token
+      })
       .catch(console.error)
   }
 }

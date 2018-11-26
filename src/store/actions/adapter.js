@@ -11,6 +11,32 @@ export const getToken = (data) => {
     .then(r => r.json())
 }
 
+export const searchConversations = (search) => {
+  const opts = {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "accept": "application/json",
+      "Authorization": `Bearer ${localStorage.jwt}`
+    }
+  }
+  return fetch(`http://localhost:3000/conversations?search=${search}`, opts)
+    .then(r => r.json())
+}
+
+export const postUser = (data) => {
+  const opts = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "accept": "application/json"
+    },
+    body: JSON.stringify(data)
+  }
+  return fetch('http://localhost:3000/users', opts)
+    .then(r => r.json())
+}
+
 export const getSplash = () => {
   const opts = {
     method: "POST",

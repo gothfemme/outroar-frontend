@@ -13,7 +13,7 @@ class Login extends Component {
   handleChange = (e, { name, value }) => {
     this.setState({
       [name]: value
-    });
+    })
   }
 
   handleSubmit = (e) => {
@@ -27,10 +27,10 @@ class Login extends Component {
       return <Redirect to="/" />
     }
     return (
-      <Container style={{height:"100vh"}}>
+      <Container style={{ height:"100vh" }}>
         <Grid textAlign='center' style={{ height: '100%' }} verticalAlign='middle'>
           <Grid.Column style={{ maxWidth: 450 }}>
-            <Header as="h1" style={{fontFamily: "'Fredoka One', cursive"}}>
+            <Header as="h1" style={{ fontFamily: "'Fredoka One', cursive" }}>
               outroar
             </Header>
             <Segment>
