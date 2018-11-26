@@ -50,6 +50,20 @@ export const getSplash = () => {
     .then(r => r.json())
 }
 
+export const postConversation = (name) => {
+  const opts = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "accept": "application/json",
+      "Authorization": `Bearer ${localStorage.jwt}`
+    },
+    body: JSON.stringify({ name: name })
+  }
+  return fetch('http://localhost:3000/conversations', opts)
+    .then(r => r.json())
+}
+
 export const fetchCurrentConversation = (id) => {
   const opts = {
     method: "GET",

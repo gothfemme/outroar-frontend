@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Popup, Icon, Ref, Loader, Header, Input, Segment, Comment } from 'semantic-ui-react';
+import { Menu, Popup, Icon, Ref, Loader, Header, Input, Segment, Comment } from 'semantic-ui-react';
 import Message from './Message';
 import Peer from 'simple-peer';
 import { ActionCable } from 'react-actioncable-provider';
@@ -18,6 +18,7 @@ class MessageWindow extends Component {
     isVideoCall: false,
     messageContainer: null,
     currentUserVideo: { stream: null, url: "" },
+    currentUsers: [],
     peerStreams: {}
   }
 
@@ -26,22 +27,6 @@ class MessageWindow extends Component {
       .then(() => this.setState({
         isLoading: false
       }))
-      .then(() => {
-        this.props.currentConversation.users.forEach(user => {
-          if (user.id !== this.props.currentUser.id) {
-            console.log("signalling", user)
-
-            this.peers[user.id] = this.createSignalingPeer(user.id)
-            setTimeout(() => {
-              if (this.peers[user.id] && !this.peers[user.id].connected) {
-                console.log("peer timeout")
-                delete this.peers[user.id]
-              }
-            }, 2000)
-          }
-        })
-
-      })
   }
 
   handleSubmit = (e) => {
@@ -80,7 +65,20 @@ class MessageWindow extends Component {
     }
   }
 
-  startVideo = () => {
+  toggleVideo = () => {
+    if (this.state.currentUserVideo.stream) {
+      Object.values(this.peers).forEach(peer => {
+        if (peer.connected) {
+          peer.removeStream(this.state.currentUserVideo.stream)
+        }
+      })
+      this.state.currentUserVideo.stream.getTracks().forEach(track => track.stop())
+      this.setState({
+        currentUserVideo: { stream: null, url: "" }
+
+      });
+      return
+    }
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(stream => {
         this.setState({
@@ -104,7 +102,7 @@ class MessageWindow extends Component {
           console.log("peer timeout")
           delete this.peers[resp.from]
         }
-      }, 2000)
+      }, 5000)
     }
   }
 
@@ -113,7 +111,6 @@ class MessageWindow extends Component {
     peer.on('signal', data => {
       this.refs.signalServer.perform('send_signal', { payload: data, to: id })
     })
-
     return peer
   }
 
@@ -139,6 +136,7 @@ class MessageWindow extends Component {
       });
       console.log(stream)
     })
+    peer.on('close', () => console.log('closed peer'))
     peer.signal(resp.payload)
     peer.on('error', (error) => {
       console.error('peer error', error)
@@ -150,6 +148,44 @@ class MessageWindow extends Component {
     this.setState({
       message: e.target.value
     });
+  }
+
+  handlePresenceConnect = () => {
+    this.refs.presenceChannel.perform("user_join", { user_id: this.props.currentUser.id, username: this.props.currentUser.username })
+  }
+
+  handlePresenceReceive = (resp) => {
+    switch (resp.action) {
+      case "user_join":
+        this.setState({
+          currentUsers: [...this.state.currentUsers, { username: resp.username, id: resp.user_id }]
+        });
+        if (resp.user_id !== this.props.currentUser.id) {
+          this.refs.presenceChannel.perform("initial_presence", { username: this.props.currentUser.username, user_id: this.props.currentUser.id })
+          this.peers[resp.user_id] = this.createSignalingPeer(resp.user_id)
+          setTimeout(() => {
+            if (this.peers[resp.user_id] && !this.peers[resp.user_id].connected) {
+              console.log("peer timeout")
+              delete this.peers[resp.user_id]
+            }
+          }, 5000)
+        }
+        break;
+      case "initial_presence":
+        if (resp.user_id !== this.props.currentUser.id) {
+          this.setState({
+            currentUsers: [...this.state.currentUsers.filter(u => u.id !== resp.user_id), { username: resp.username, id: resp.user_id }]
+          });
+        }
+        break;
+      case "user_left":
+        this.setState({
+          currentUsers: this.state.currentUsers.filter(u => u.id !== resp.user_id)
+        })
+        break;
+      default:
+        return
+    }
   }
 
   handleConnect = () => {
@@ -170,6 +206,7 @@ class MessageWindow extends Component {
       <React.Fragment>
 
       <ActionCable ref="signalServer" channel={{channel:"SignalChannel", room: this.props.match.params.id, token:localStorage.jwt}} onReceived={this.handleReceive} onConnected={this.handleConnect}/>
+      <ActionCable ref="presenceChannel" channel={{channel:"PresenceChannel", room: this.props.match.params.id, token:localStorage.jwt}} onReceived={this.handlePresenceReceive} onConnected={this.handlePresenceConnect}/>
 
       {this.state.isLoading? <div style={{width:"100%", paddingTop:"45vh", paddingRight:"20rem"}}><Loader size="massive" inline='centered' active/></div> : (
 
@@ -177,23 +214,35 @@ class MessageWindow extends Component {
 
         <Segment textAlign="center" size="big" style={{borderRadius:"0", flex:"0 0 auto", width:"100%", zIndex:"2", marginBottom:"0"}}>
           <span style={{float:"left"}}>
-          <Popup
-            inverted
-            position="bottom left"
-            content="Back"
-            trigger={
-          <Icon link onClick={this.leaveChannel} name="bars" style={{cursor:"pointer"}}></Icon>}
-        />
-      </span>
+            <Popup
+              inverted
+              position="bottom left"
+              content="Back"
+              trigger={
+                <Icon link onClick={this.leaveChannel} name="bars" style={{cursor:"pointer"}}></Icon>}
+            />
+          </span>
 
-          <Popup
-            inverted
-            position="bottom right"
-            content="Start video"
-            trigger={
-          <i onClick={this.startVideo} className={`link fas fa-video${this.state.currentUserVideo.stream ? "-slash" : ""}`} style={{float:"right", cursor:"pointer"}}></i>}
-        />
-          <Header as="h5" style={{display:"inline"}}>{conversation.name ? conversation.name : conversation.users.map(userObj =>  userObj.username).join(', ')}</Header>
+        <span style={{float:"right"}}>
+            <Popup
+              inverted
+              position="bottom right"
+              content="Start video"
+              trigger={
+            <i onClick={this.toggleVideo} className={`link fas fa-video${this.state.currentUserVideo.stream ? "-slash" : ""}`} style={{float:"right", cursor:"pointer", paddingRight:"1rem"}}></i>}
+          />
+        </span>
+
+        { this.state.currentUserVideo.stream ?
+(          <span style={{float:"right"}}><Popup
+          inverted
+          position="bottom right"
+          content="Mute"
+          trigger={
+        <i onClick={this.muteStream} className={`link fas fa-microphone${this.state.currentUserVideo.stream ? "-slash" : ""}`} style={{cursor:"pointer", paddingRight:"1.5rem"}}></i>}
+      /></span> ) : null
+    }
+          <Header as="h5" style={{display:"inline"}}><Icon name="star" ></Icon>{conversation.name ? conversation.name : conversation.users.map(userObj =>  userObj.username).join(', ')}</Header>
         </Segment>
 
         {this.state.isVideoCall ? (
@@ -213,12 +262,19 @@ class MessageWindow extends Component {
             </Segment>
         ) : null}
 
+          <div style={{flex:"1 1 100%", display:"flex", overflowY:"scroll"}}>
           <Ref innerRef={this.handleRef}>
-          <Comment.Group style={{padding:"1rem", overflowY:"scroll", margin:"0", maxWidth:"100%", flex:"1 1 100%"}}>
+          <Comment.Group style={{padding:"1rem", margin:"0", maxWidth:"100%"}}>
 
             {this.props.currentConversation.messages.map(message => <Message key={message.id} message={message}/>)}
           </Comment.Group>
         </Ref>
+        <Menu inverted vertical fitted="vertically" borderless style={{position:"fixed", right:"0", marginTop:"0", borderRadius:"0", height:"100%", borderLeft: "1px solid #999"}}>
+          <Menu.Item header >Users</Menu.Item>
+          {this.state.currentUsers.map(user => <Menu.Item key={user.id} link>{user.username}</Menu.Item>)}
+
+        </Menu>
+      </div>
 
         <Segment secondary style={{borderRadius:"0", flex:"0 0 auto", marginTop:"0", width:"100%"}}>
           <form onSubmit={this.handleSubmit}>
