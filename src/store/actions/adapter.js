@@ -1,3 +1,5 @@
+const BASEURL = "http://localhost:3000/"
+
 export const getToken = (data) => {
   const opts = {
     method: "POST",
@@ -7,7 +9,7 @@ export const getToken = (data) => {
     },
     body: JSON.stringify(data)
   }
-  return fetch('http://localhost:3000/user_token', opts)
+  return fetch(`${BASEURL}user_token`, opts)
     .then(r => r.json())
 }
 
@@ -20,7 +22,7 @@ export const searchConversations = (search) => {
       "Authorization": `Bearer ${localStorage.jwt}`
     }
   }
-  return fetch(`http://localhost:3000/conversations?search=${search}`, opts)
+  return fetch(`${BASEURL}conversations?search=${search}`, opts)
     .then(r => r.json())
 }
 
@@ -33,20 +35,34 @@ export const postUser = (data) => {
     },
     body: JSON.stringify(data)
   }
-  return fetch('http://localhost:3000/users', opts)
+  return fetch(`${BASEURL}users`, opts)
     .then(r => r.json())
 }
 
 export const getSplash = () => {
   const opts = {
-    method: "POST",
+    method: "GET",
     headers: {
       "Content-Type": "application/json",
       "accept": "application/json",
       "Authorization": `Bearer ${localStorage.jwt}`
     }
   }
-  return fetch('http://localhost:3000/splash', opts)
+  return fetch(`${BASEURL}splash`, opts)
+    .then(r => r.json())
+}
+
+export const patchUser = (body) => {
+  const opts = {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "accept": "application/json",
+      "Authorization": `Bearer ${localStorage.jwt}`
+    },
+    body: JSON.stringify(body)
+  }
+  return fetch(`${BASEURL}users/`, opts)
     .then(r => r.json())
 }
 
@@ -60,8 +76,34 @@ export const postConversation = (name) => {
     },
     body: JSON.stringify({ name: name })
   }
-  return fetch('http://localhost:3000/conversations', opts)
+  return fetch(`${BASEURL}conversations`, opts)
     .then(r => r.json())
+}
+
+export const postFavorite = (id) => {
+  const opts = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "accept": "application/json",
+      "Authorization": `Bearer ${localStorage.jwt}`
+    },
+    body: JSON.stringify({ conversation_id: id })
+  }
+  return fetch(`${BASEURL}favorites`, opts)
+}
+
+export const deleteFavorite = (id) => {
+  const opts = {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "accept": "application/json",
+      "Authorization": `Bearer ${localStorage.jwt}`
+    },
+    body: JSON.stringify({ conversation_id: id })
+  }
+  return fetch(`${BASEURL}favorites`, opts)
 }
 
 export const fetchCurrentConversation = (id) => {
@@ -73,7 +115,7 @@ export const fetchCurrentConversation = (id) => {
       "Authorization": `Bearer ${localStorage.jwt}`
     }
   }
-  return fetch(`http://localhost:3000/conversations/${id}`, opts)
+  return fetch(`${BASEURL}conversations/${id}`, opts)
     .then(r => r.json())
 }
 
@@ -87,7 +129,7 @@ export const postMessage = (message) => {
     },
     body: JSON.stringify(message)
   }
-  return fetch('http://localhost:3000/messages', opts)
+  return fetch(`${BASEURL}messages`, opts)
     .then(r => r.json())
 }
 
@@ -100,7 +142,7 @@ export const fetchCurrentUser = () => {
       "Authorization": `Bearer ${localStorage.jwt}`
     }
   }
-  return fetch('http://localhost:3000/current', opts)
+  return fetch(`${BASEURL}current`, opts)
     .then(r => r.json())
 }
 

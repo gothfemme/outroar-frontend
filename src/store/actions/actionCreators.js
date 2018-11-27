@@ -1,4 +1,4 @@
-import { getToken, getSplash, fetchCurrentUser, fetchCurrentConversation, postMessage, postUser } from './adapter';
+import { getToken, getSplash, fetchCurrentUser, fetchCurrentConversation, postMessage, postUser, postFavorite, patchUser, deleteFavorite } from './adapter';
 
 // actions
 
@@ -6,6 +6,27 @@ const setUser = (user) => {
   return {
     type: "SET_USER",
     payload: user
+  }
+}
+
+const changeColorInStore = (color) => {
+  return {
+    type: "CHANGE_COLOR",
+    payload: color
+  }
+}
+
+const removeFavoriteFromStore = (id) => {
+  return {
+    type: "REMOVE_FAVORITE",
+    payload: id
+  }
+}
+
+const addFavoriteToStore = (id) => {
+  return {
+    type: "ADD_FAVORITE",
+    payload: id
   }
 }
 
@@ -38,6 +59,20 @@ export const addMessage = (message) => {
 }
 
 // thunks
+
+export const removeFavorite = (id) => {
+  return (dispatch) => {
+    dispatch(removeFavoriteFromStore(id))
+    return deleteFavorite(id)
+  }
+}
+
+export const addFavorite = (id) => {
+  return (dispatch) => {
+    dispatch(addFavoriteToStore(id))
+    return postFavorite(id)
+  }
+}
 
 export const sendMessage = (message) => {
   return (dispatch) => {
@@ -77,6 +112,13 @@ export const createUser = (data) => {
   }
 }
 
+export const changeColor = (color) => {
+  return (dispatch) => {
+    dispatch(changeColorInStore(color))
+    return patchUser({ color: color })
+  }
+}
+
 export const sendAuth = (data) => {
   return (dispatch) => {
     return getToken(data)
@@ -88,14 +130,14 @@ export const sendAuth = (data) => {
   }
 }
 
-export const fetchSplash = () => {
-  return (dispatch) => {
-    return getSplash()
-      .then(resp => {
-        dispatch(setConversations(resp.conversations))
-      })
-      .catch(console.error)
-  }
-}
+// export const fetchSplash = () => {
+//   return (dispatch) => {
+//     return getSplash()
+//       .then(resp => {
+//         dispatch(setConversations(resp.conversations))
+//       })
+//       .catch(console.error)
+//   }
+// }
 
 // export const getCurrentMessages = () => {}
