@@ -1,8 +1,8 @@
-import { getToken, getSplash, fetchCurrentUser, fetchCurrentConversation, postMessage, postUser, postFavorite, patchUser, deleteFavorite } from './adapter';
+import { getToken, fetchCurrentUser, fetchCurrentConversation, postMessage, postUser, postFavorite, patchUser, deleteFavorite } from './adapter';
 
 // actions
 
-const setUser = (user) => {
+export const setUser = (user) => {
   return {
     type: "SET_USER",
     payload: user
@@ -27,13 +27,6 @@ const addFavoriteToStore = (id) => {
   return {
     type: "ADD_FAVORITE",
     payload: id
-  }
-}
-
-const setConversations = (conversations) => {
-  return {
-    type: "SET_CONVERSATIONS",
-    payload: conversations
   }
 }
 
@@ -108,7 +101,6 @@ export const createUser = (data) => {
         dispatch(setUser(resp.user))
         return resp.token
       })
-      .catch(console.error)
   }
 }
 
@@ -126,7 +118,6 @@ export const sendAuth = (data) => {
         localStorage.setItem("jwt", resp.jwt)
         dispatch(setUser(resp.current_user))
       })
-      .catch(console.error)
   }
 }
 

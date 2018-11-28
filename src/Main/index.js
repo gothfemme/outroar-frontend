@@ -2,8 +2,9 @@ import React, { Component } from 'react';
 import { Dropdown, Menu, List, Popup, Input, Icon, Container, Header, Loader } from 'semantic-ui-react';
 import SearchListing from './SearchListing';
 import { connect } from 'react-redux';
-import { addPeer, changeColor } from '../store';
+import { setUser, changeColor } from '../store';
 import debounce from 'lodash/debounce';
+import { Redirect } from 'react-router-dom';
 import { getSplash, searchConversations, postConversation } from '../store/actions/adapter';
 
 class MainContainer extends Component {
@@ -17,15 +18,17 @@ class MainContainer extends Component {
   }
 
   componentDidMount() {
-    getSplash()
-      .then(res => {
-        console.log(res)
-        this.setState({
-          viewingFavorites: true,
-          channels: res,
-          isLoading: false
+    if (localStorage.jwt) {
+      getSplash()
+        .then(res => {
+          console.log(res)
+          this.setState({
+            viewingFavorites: true,
+            channels: res,
+            isLoading: false
+          })
         })
-      })
+    }
   }
 
   toggleFavorites = () => {
@@ -95,6 +98,7 @@ class MainContainer extends Component {
 
   handleLogOut = () => {
     localStorage.clear()
+    this.props.clearUser()
     this.props.history.push('/login')
   }
 
@@ -115,7 +119,7 @@ class MainContainer extends Component {
     }
     const colors = ["red", "orange", "yellow", "green", "teal", "blue", "violet", "purple", "pink", "black"]
     if (!localStorage.jwt) {
-      return this.props.history.push('/login')
+      return <Redirect to="/login" />
     }
     return (
       <React.Fragment>
@@ -129,7 +133,7 @@ class MainContainer extends Component {
                 <Menu.Menu position="right">
                 {/* <Menu.Item  link>{this.props.currentUser.username}</Menu.Item> */}
                 <Dropdown style={{color:colorKey[this.props.currentUser.color]}} icon={false} text={this.props.currentUser.username} pointing className='link item'>
-                  <Dropdown.Menu>
+                  <Dropdown.Menu style={{fontSize:"1rem"}}>
                     <Dropdown.Header>Chat color</Dropdown.Header>
                     {colors.map(c => <Dropdown.Item onClick={this.handleColorChange} key={c} name={c} label={{ color: c, empty: true, circular: true }} text={c.slice(0, 1).toUpperCase() + c.slice(1)}/>)}
                   </Dropdown.Menu>
@@ -157,7 +161,7 @@ class MainContainer extends Component {
                  <List relaxed style={{width:"39vw", textAlign:"left", marginRight:"auto", marginLeft:"auto", marginBottom:"4rem"}}>
                    {isSearching && !isSearchLoading &&  channels.length > 0 && !channels.find(channel => channel.name === search) ? (
                      <List.Item>
-                       <List.Icon style={{paddingLeft:"0.2rem", paddingRight:"0.6rem"}} size="large" verticalAlign="middle" name='plus' />
+                       <List.Icon style={{paddingLeft:"0.2rem", paddingRight:"0.6rem"}} size="large" verticalAlign="middle" color="grey" name='plus' />
                        <List.Content onClick={this.newChannel}>
                          <List.Header as="a"> "{search}" is free as a name.</List.Header>
                          <List.Description as="a">Create a new channel?</List.Description>
@@ -174,7 +178,7 @@ class MainContainer extends Component {
                                       ) : null}
                    {(!isSearchLoading && (isSearching || viewingFavorites))&& channels.map(channel => <SearchListing key={channel.id} channel={channel}/>)}
                    {isSearching && !isSearchLoading && channels.length === 0 ? (<List.Item>
-                      <List.Icon size="large" verticalAlign="middle" name='question' />
+                      <List.Icon size="large" color="grey" verticalAlign="middle" name='question' />
                       <List.Content onClick={this.newChannel}>
                         <List.Header as="a">No results found for "{this.state.search}".</List.Header>
                         <List.Description as="a">Create a new channel with that name?</List.Description>
@@ -200,8 +204,7 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    addPeer: (peer) => dispatch(addPeer(peer)),
-    addMessage: (action) => dispatch(action),
+    clearUser: () => dispatch(setUser({ favorite_channels: [] })),
     changeColor: (color) => dispatch(changeColor(color))
   }
 }

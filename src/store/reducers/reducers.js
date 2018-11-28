@@ -1,15 +1,11 @@
-const initialState = { user: { favorite_channels: [] }, conversations: [], currentConversation: { messages: [] }, peers: [] }
+const initialState = { user: { favorite_channels: [] }, currentConversation: { messages: [] } }
 
 const reducer = (state = initialState, action) => {
   switch (action.type) {
     case "SET_USER":
       return { ...state, user: action.payload }
-    case "SET_CONVERSATIONS":
-      return { ...state, conversations: action.payload }
     case "SET_CURRENT_CONVERSATION":
       return { ...state, currentConversation: action.payload }
-    case "SET_CURRENT_MESSAGES":
-      return { ...state, currentMessages: [] }
     case "CHANGE_COLOR":
       return { ...state, user: { ...state.user, color: action.payload } }
     case "ADD_FAVORITE":
@@ -22,11 +18,6 @@ const reducer = (state = initialState, action) => {
       } else {
         return state
       }
-    case "ADD_PEER":
-      console.log(action.payload.id, action.payload.conversation)
-      const newPeerArray = state.peers.filter(peer => peer.id !== action.payload.id && peer.conversation !== action.payload.conversation)
-      console.log(newPeerArray, action.payload)
-      return { ...state, peers: [...newPeerArray, action.payload] }
     default:
       return state
   }

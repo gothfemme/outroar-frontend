@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Button, Header, Form, Grid, Container, Segment } from 'semantic-ui-react';
+import { Popup, Button, Header, Form, Grid, Container, Segment } from 'semantic-ui-react';
 import { Redirect, Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { sendAuth } from '../store';
@@ -7,7 +7,8 @@ import { sendAuth } from '../store';
 class Login extends Component {
   state = {
     username: "",
-    password: ""
+    password: "",
+    loginError: false
   }
 
   handleChange = (e, { name, value }) => {
@@ -18,8 +19,17 @@ class Login extends Component {
 
   handleSubmit = (e) => {
     e.preventDefault()
-    this.props.logIn({ auth: this.state })
+    this.props.logIn({ auth: { username: this.state.username, password: this.state.password } })
       .then(() => this.props.history.push('/'))
+      .catch(async (error) => {
+        const res = await error
+        if (res.status === 404) {
+          this.setState({
+            loginError: true
+          });
+        }
+        return undefined
+      })
   }
 
   render() {
@@ -35,8 +45,19 @@ class Login extends Component {
             </Header>
             <Segment>
         <Form onSubmit={this.handleSubmit}>
-          <Form.Input icon="user" iconPosition="left" onChange={this.handleChange} name="username" value={this.state.username} placeholder="Username"/>
-          <Form.Input icon="lock" type="password" iconPosition="left" onChange={this.handleChange} name="password" value={this.state.password} placeholder="Password"/>
+          <Popup
+            position="right center"
+            basic
+            size="tiny"
+            wide="very"
+            style={{color: "#9f3a38", borderColor: "#e0b4b4", background: "#fff6f6"}}
+            open={this.state.loginError}
+            content="Username or password are invalid."
+            trigger={
+          <Form.Input error={this.state.loginError} icon="user" iconPosition="left" onChange={this.handleChange} name="username" value={this.state.username} placeholder="Username"/>
+        }
+      />
+          <Form.Input error={this.state.loginError} icon="lock" type="password" iconPosition="left" onChange={this.handleChange} name="password" value={this.state.password} placeholder="Password"/>
           <Button color='pink' fluid size='large'>
             Login
           </Button>

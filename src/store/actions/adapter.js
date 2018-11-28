@@ -1,5 +1,13 @@
 const BASEURL = "http://localhost:3000/"
 
+function checkError(res) {
+  if (res.ok) {
+    return res;
+  } else {
+    throw res;
+  }
+}
+
 export const getToken = (data) => {
   const opts = {
     method: "POST",
@@ -10,6 +18,7 @@ export const getToken = (data) => {
     body: JSON.stringify(data)
   }
   return fetch(`${BASEURL}user_token`, opts)
+    .then(checkError)
     .then(r => r.json())
 }
 
@@ -36,6 +45,7 @@ export const postUser = (data) => {
     body: JSON.stringify(data)
   }
   return fetch(`${BASEURL}users`, opts)
+    .then(checkError)
     .then(r => r.json())
 }
 
