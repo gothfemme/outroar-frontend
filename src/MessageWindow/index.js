@@ -123,12 +123,7 @@ class MessageWindow extends Component {
   handleReceive = (resp) => {
     console.log(resp)
     if (resp.action === "send_signal") {
-      if (this.peers[resp.from] && this.peers[resp.from].connected) {
-        return
-      }
       this.peers[resp.from] = this.createResponsePeer(resp)
-
-      console.log(resp.payload.type)
       setTimeout(() => {
         if (this.peers[resp.from] && !this.peers[resp.from].connected) {
           console.log("peer timeout")
@@ -154,35 +149,38 @@ class MessageWindow extends Component {
         this.refs.signalServer.perform('send_signal', { payload: data, to: resp.from })
       })
     }
-    peer.on('connect', () => {
-      console.log('hit connect')
-      if (this.state.currentUserVideo.stream) {
-        peer.addStream(this.state.currentUserVideo.stream)
-      }
-    })
-    peer.on('data', raw => {
-      if (JSON.parse(raw.toString()).action === "video_stopped") {
+    if (!peer.connected) {
+      peer.on('connect', () => {
+        console.log('hit connect')
+        if (this.state.currentUserVideo.stream) {
+          peer.addStream(this.state.currentUserVideo.stream)
+        }
+      })
+      peer.on('data', raw => {
+        if (JSON.parse(raw.toString()).action === "video_stopped") {
+          this.setState({
+            peerStreams: this.state.peerStreams.filter(p => p.id !== JSON.parse(raw.toString()).user_id)
+          })
+          return
+        } else if (JSON.parse(raw.toString()).hasOwnProperty("is_whisper")) {
+          this.props.addWhisper(JSON.parse(raw.toString()))
+          return
+        }
+        this.props.addMessage(JSON.parse(raw.toString()))
+      })
+      peer.on('stream', stream => {
         this.setState({
-          peerStreams: this.state.peerStreams.filter(p => p.id !== JSON.parse(raw.toString()).user_id)
-        })
-        return
-      } else if (JSON.parse(raw.toString()).hasOwnProperty("is_whisper")) {
-        this.props.addWhisper(JSON.parse(raw.toString()))
-        return
-      }
-      this.props.addMessage(JSON.parse(raw.toString()))
-    })
-    peer.on('stream', stream => {
-      this.setState({
-        isVideoCall: true,
-        peerStreams: [...this.state.peerStreams.filter(p => p.id !== resp.from), { id: resp.from, stream: window.URL.createObjectURL(stream) }]
-      });
-    })
-    peer.on('close', () => console.log('closed peer'))
+          isVideoCall: true,
+          peerStreams: [...this.state.peerStreams.filter(p => p.id !== resp.from), { id: resp.from, stream: window.URL.createObjectURL(stream) }]
+        });
+      })
+      peer.on('close', () => console.log('closed peer'))
+      peer.on('error', (error) => {
+        console.error('peer error', error)
+      })
+    }
+
     peer.signal(resp.payload)
-    peer.on('error', (error) => {
-      console.error('peer error', error)
-    })
     return peer
   }
 
