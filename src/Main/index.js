@@ -52,9 +52,10 @@ class MainContainer extends Component {
     })
   }
 
-  handleColorChange = (e) => {
+  handleColorChange = (color) => {
     // console.log(e.target.innerText.toLowerCase())
-    this.props.changeColor(e.target.innerText.toLowerCase())
+    // console.dir(color)
+    this.props.changeColor(color)
   }
 
   searchAndSet = () => {
@@ -135,7 +136,7 @@ class MainContainer extends Component {
                 <Dropdown style={{color:colorKey[this.props.currentUser.color]}} icon={false} text={this.props.currentUser.username} pointing className='link item'>
                   <Dropdown.Menu style={{fontSize:"1rem"}}>
                     <Dropdown.Header>Chat color</Dropdown.Header>
-                    {colors.map(c => <Dropdown.Item onClick={this.handleColorChange} key={c} name={c} label={{ color: c, empty: true, circular: true }} text={c.slice(0, 1).toUpperCase() + c.slice(1)}/>)}
+                    {colors.map(c => <Dropdown.Item onClick={() => this.handleColorChange(c)} key={c} name={c} label={{ color: c, empty: true, circular: true }} text={c.slice(0, 1).toUpperCase() + c.slice(1)}/>)}
                   </Dropdown.Menu>
                 </Dropdown>
                 <Popup
@@ -151,13 +152,29 @@ class MainContainer extends Component {
               {/* </div> */}
               <Header color="pink" style={{fontFamily: "'Fredoka One', cursive", paddingTop:"10vh", fontSize:"5rem"}}>outroar</Header>
               <Container style={{textAlign:"center"}}>
-                <Input  input={<input onChange={this.handleChange} value={search}></input>} loading={isSearchLoading} icon="search" style={{width:"35vw", marginRight:"1.5rem"}} placeholder="Find a channel..."></Input>
+                <Input  input={<input onChange={this.handleChange} value={search}></input>} loading={isSearchLoading} icon="search" style={{width:"35vw", marginRight:"1rem"}} placeholder="Find a channel..."></Input>
                 <Popup
                   content="View favorite channels"
-                  trigger={<Icon link onClick={this.toggleFavorites} color={viewingFavorites ? "yellow" : "grey"} size="big" style={{ verticalAlign:"-0.25rem", cursor:"pointer" }} name={viewingFavorites ? "star" : "star outline"} />}
+                  trigger={<Icon link onClick={this.toggleFavorites} color={viewingFavorites ? "yellow" : "grey"} size="big" style={{ verticalAlign:"-0.25rem", marginRight:".5rem",cursor:"pointer" }} name={viewingFavorites ? "star" : "star outline"} />}
                   position="top center"
                   inverted
                  />
+                 <Popup
+                   content="View most popular"
+                   trigger={
+                     <Icon link onClick={this.toggleFavorites} color={viewingFavorites ? "yellow" : "grey"} size="big" style={{ verticalAlign:"-0.25rem", marginRight:".5rem",cursor:"pointer" }} name="trophy" />
+                   }
+                   position="top center"
+                   inverted
+                  />
+                 <Popup
+                   content="Random!"
+                   trigger={
+                     <i className="fas fa-dice fa-2x" style={{ color:"#767676", verticalAlign:"-0.25rem", cursor:"pointer", opacity:".8" }}/>
+                 }
+                   position="top center"
+                   inverted
+                  />
                  <List relaxed style={{width:"39vw", textAlign:"left", marginRight:"auto", marginLeft:"auto", marginBottom:"4rem"}}>
                    {isSearching && !isSearchLoading &&  channels.length > 0 && !channels.find(channel => channel.name === search) ? (
                      <List.Item>
@@ -196,9 +213,7 @@ class MainContainer extends Component {
 
 const mapStateToProps = (state) => {
   return {
-    currentUser: state.user,
-    // conversations: state.conversations,
-    // currentConversation: state.currentConversation
+    currentUser: state.user
   }
 }
 

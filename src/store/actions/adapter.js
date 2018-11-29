@@ -62,6 +62,19 @@ export const getSplash = () => {
     .then(r => r.json())
 }
 
+export const getPopular = () => {
+  const opts = {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "accept": "application/json",
+      "Authorization": `Bearer ${localStorage.jwt}`
+    }
+  }
+  return fetch(`${BASEURL}conversations?popular=`, opts)
+    .then(r => r.json())
+}
+
 export const patchUser = (body) => {
   const opts = {
     method: "PATCH",

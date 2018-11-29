@@ -119,15 +119,3 @@ export const sendAuth = (data) => {
       })
   }
 }
-
-// export const fetchSplash = () => {
-//   return (dispatch) => {
-//     return getSplash()
-//       .then(resp => {
-//         dispatch(setConversations(resp.conversations))
-//       })
-//       .catch(console.error)
-//   }
-// }
-
-// export const getCurrentMessages = () => {}

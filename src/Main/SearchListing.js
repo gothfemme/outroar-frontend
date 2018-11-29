@@ -1,27 +1,27 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { List } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
 import timeAgo from '../timeAgo';
 import { removeFavorite, addFavorite } from '../store';
 import { connect } from 'react-redux';
 
-class SearchListing extends Component {
-
-  render() {
-    return (
-      <List.Item>
+const SearchListing = ({ channel, isFavorited, addFavorite, removeFavorite }) => {
+  return (
+    <List.Item>
         <List.Icon
           link
-          onClick={() => this.props.isFavorited ? this.props.removeFavorite(this.props.channel.id) : this.props.addFavorite(this.props.channel.id)}
-          color={this.props.isFavorited ? "yellow" : "grey"} name={`star${this.props.isFavorited ? "" : " outline"}`} size='large' verticalAlign='middle' />
+          onClick={() => isFavorited ? removeFavorite(this.props.channel.id) : addFavorite(channel.id)}
+          color={isFavorited ? "yellow" : "grey"}
+          name={`star${isFavorited ? "" : " outline"}`}
+          size='large'
+          verticalAlign='middle' 
+        />
         <List.Content>
-          <List.Header as={Link} to={`/channels/${this.props.channel.id}`}>{this.props.channel.name}</List.Header>
-          <List.Description as={Link} to={`/channels/${this.props.channel.id}`}>Created {timeAgo(this.props.channel.created_at)}</List.Description>
+          <List.Header as={Link} to={`/channels/${channel.id}`}>{channel.name}</List.Header>
+          <List.Description as={Link} to={`/channels/${channel.id}`}>Created {timeAgo(channel.created_at)}</List.Description>
         </List.Content>
       </List.Item>
-    );
-  }
-
+  );
 }
 
 const mapStateToProps = (state, ownProps) => {

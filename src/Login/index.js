@@ -55,8 +55,8 @@ class Login extends Component {
             content="Username or password are invalid."
             trigger={
           <Form.Input error={this.state.loginError} icon="user" iconPosition="left" onChange={this.handleChange} name="username" value={this.state.username} placeholder="Username"/>
-        }
-      />
+            }
+          />
           <Form.Input error={this.state.loginError} icon="lock" type="password" iconPosition="left" onChange={this.handleChange} name="password" value={this.state.password} placeholder="Password"/>
           <Button color='pink' fluid size='large'>
             Login

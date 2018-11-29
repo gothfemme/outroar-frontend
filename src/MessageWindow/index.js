@@ -31,7 +31,6 @@ class MessageWindow extends Component {
       .then(() => this.setState({
         isLoading: false
       }))
-      .then(() => console.log(this.messageScroll))
       .catch(async (error) => {
         const err = await error.json()
         console.log(err)
@@ -56,24 +55,18 @@ class MessageWindow extends Component {
     if (newMessage.content.match(/^\/\w+\b/)) {
       switch (newMessage.content.match(/^\/\w+\b/)[0]) {
         case "/whisper":
-          // console.log("whisper")
           let arr = newMessage.content.split(/\s+/)
           if (arr[1]) {
             let user = this.state.currentUsers.find(u => u.username === arr[1])
             if (user && this.peers[user.id]) {
               let whisper = { is_whisper: "received", created_at: Date.now(), user: { id: this.props.currentUser.id, username: this.props.currentUser.username, color: this.props.currentUser.color }, content: arr.slice(2).join(" ") }
-              console.log(whisper)
               this.peers[user.id].send(JSON.stringify(whisper))
               let whisperForMe = { is_whisper: "sent", created_at: Date.now(), user: { id: user.id, username: user.username, color: null }, content: arr.slice(2).join(" ") }
               this.props.addWhisper(whisperForMe)
             }
           }
           break;
-        case "/test":
-          console.log("test")
-          break;
         default:
-
       }
     } else {
       this.props.sendMessage(newMessage)
@@ -85,10 +78,7 @@ class MessageWindow extends Component {
             }
           })
         })
-
     }
-
-
   }
 
   handleRef = node => {
@@ -98,12 +88,8 @@ class MessageWindow extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    // console.log("did update", prevProps)
-    if (prevProps.currentConversation.messages.length < this.props.currentConversation.messages.length) {
-      if (this.state.messageContainer) {
-
-        this.state.messageContainer.scrollTo({ top: this.state.messageContainer.scrollHeight })
-      }
+    if (prevProps.currentConversation.messages.length < this.props.currentConversation.messages.length && this.state.messageContainer) {
+      this.state.messageContainer.scrollTo({ top: this.state.messageContainer.scrollHeight })
     }
   }
 
@@ -112,7 +98,6 @@ class MessageWindow extends Component {
       this.state.currentUserVideo.stream.getTracks().forEach(track => track.stop())
       this.setState({
         currentUserVideo: { stream: null, url: "" }
-
       });
       Object.values(this.peers).forEach(peer => {
         if (peer.connected) {
@@ -123,7 +108,6 @@ class MessageWindow extends Component {
     }
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(stream => {
-        // stream.getVideoTracks()[0].addEventListener('ended', () => console.log("hi"))
         this.setState({
           isVideoCall: true,
           currentUserVideo: { stream: stream, url: window.URL.createObjectURL(stream) }
@@ -140,6 +124,7 @@ class MessageWindow extends Component {
     console.log(resp)
     if (resp.action === "send_signal") {
       this.peers[resp.from] = this.createResponsePeer(resp)
+      console.log(resp.payload.type)
       setTimeout(() => {
         if (this.peers[resp.from] && !this.peers[resp.from].connected) {
           console.log("peer timeout")
@@ -172,7 +157,6 @@ class MessageWindow extends Component {
       }
     })
     peer.on('data', raw => {
-      console.log(JSON.parse(raw.toString()))
       if (JSON.parse(raw.toString()).action === "video_stopped") {
         this.setState({
           peerStreams: this.state.peerStreams.filter(p => p.id !== JSON.parse(raw.toString()).user_id)
@@ -180,8 +164,6 @@ class MessageWindow extends Component {
         return
       } else if (JSON.parse(raw.toString()).hasOwnProperty("is_whisper")) {
         this.props.addWhisper(JSON.parse(raw.toString()))
-        // console.log("received whisper ?")
-        // console.log(JSON.parse(raw.toString()))
         return
       }
       this.props.addMessage(JSON.parse(raw.toString()))
@@ -191,7 +173,6 @@ class MessageWindow extends Component {
         isVideoCall: true,
         peerStreams: [...this.state.peerStreams.filter(p => p.id !== resp.from), { id: resp.from, stream: window.URL.createObjectURL(stream) }]
       });
-      console.log(stream)
     })
     peer.on('close', () => console.log('closed peer'))
     peer.signal(resp.payload)
@@ -211,7 +192,6 @@ class MessageWindow extends Component {
     const sayHi = this.refs.presenceChannel.perform("user_join", { user_id: this.props.currentUser.id, username: this.props.currentUser.username })
     console.log("presence connect")
     setTimeout(sayHi, 1000)
-
   }
 
   removeObj = (obj, prop) => {
@@ -222,7 +202,6 @@ class MessageWindow extends Component {
   }
 
   handlePresenceReceive = (resp) => {
-    console.log("presence receive", resp)
     switch (resp.action) {
       case "user_join":
         this.setState({
@@ -232,9 +211,12 @@ class MessageWindow extends Component {
           this.refs.presenceChannel.perform("initial_presence", { username: this.props.currentUser.username, user_id: this.props.currentUser.id })
           this.peers[resp.user_id] = this.createSignalingPeer(resp.user_id)
           setTimeout(() => {
+            console.log("initiating peer timeout", this.peers)
             if (this.peers[resp.user_id] && !this.peers[resp.user_id].connected) {
-              console.log("peer timeout")
               delete this.peers[resp.user_id]
+              if (this.state.currentUsers[resp.user_id]) {
+                this.peers[resp.user_id] = this.createSignalingPeer(resp.user_id)
+              }
             }
           }, 5000)
         }
@@ -248,17 +230,13 @@ class MessageWindow extends Component {
         break;
       case "user_left":
         if (this.peers[resp.user_id] && this.peers[resp.user_id].connected) {
-
           this.peers[resp.user_id].destroy()
         }
-        // console.log()
-        // console.log(res);
         this.peers = this.removeObj(this.peers, resp.user_id)
         this.setState({
           currentUsers: this.state.currentUsers.filter(u => u.id !== resp.user_id),
           peerStreams: this.state.peerStreams.filter(p => p.id !== resp.user_id)
         })
-        // this.peers = this.peers.filter(p => p.id !== resp.user_id)
         break;
       default:
         return
@@ -266,7 +244,7 @@ class MessageWindow extends Component {
   }
 
   handleConnect = () => {
-    console.log("connected to websocket")
+    console.log("connected to signal")
   }
 
   leaveChannel = () => {
@@ -405,7 +383,6 @@ class MessageWindow extends Component {
             ></Input>
           </form>
         </Segment>
-
       </div>
     </React.Fragment>
     );
