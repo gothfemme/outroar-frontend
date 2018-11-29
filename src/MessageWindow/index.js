@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Menu, Popup, Icon, Loader, Header, Input, Segment, Comment } from 'semantic-ui-react';
 import Message from './Message';
+import VideoPlayer from './VideoPlayer';
 import Peer from 'simple-peer';
 import { Redirect } from 'react-router-dom';
 import { ActionCable } from 'react-actioncable-provider';
@@ -21,7 +22,8 @@ class MessageWindow extends Component {
     messageContainer: null,
     currentUserVideo: { stream: null, url: "" },
     currentUsers: [],
-    peerStreams: []
+    peerStreams: [],
+    loadErr: false
   }
 
   componentDidMount = () => {
@@ -30,6 +32,15 @@ class MessageWindow extends Component {
         isLoading: false
       }))
       .then(() => console.log(this.messageScroll))
+      .catch(async (error) => {
+        const err = await error.json()
+        console.log(err)
+        this.setState({
+          isLoading: false,
+          loadErr: true
+        });
+        return undefined
+      })
   }
 
   handleSubmit = (e) => {
@@ -276,6 +287,11 @@ class MessageWindow extends Component {
     if (this.state.isLoading) {
       return <Loader size="massive" active>{loadingPhrases[Math.floor(Math.random()*loadingPhrases.length)]}</Loader>
     }
+    if (this.state.loadErr) {
+      return <div style={{paddingTop:"45vh", textAlign:"center"}}>
+        <Header size="huge">This channel does not exist.</Header>
+      </div>
+    }
 
     return (
       <React.Fragment>
@@ -291,10 +307,12 @@ class MessageWindow extends Component {
           <span style={{float:"left"}}>
             <Popup
               inverted
-              position="bottom left"
+              position="bottom center"
               content="Home"
               trigger={
-                <Icon link onClick={this.leaveChannel} name="home" style={{cursor:"pointer"}}></Icon>}
+                <Header className="link" as="h2" color="pink" onClick={this.leaveChannel} style={{ fontFamily: "'Fredoka One', cursive", cursor:"pointer" }}>outroar</Header>
+                // <Icon link onClick={this.leaveChannel} name="home" style={{cursor:"pointer"}}></Icon>
+              }
             />
           </span>
 
@@ -334,21 +352,11 @@ class MessageWindow extends Component {
                 <div style={{position:"relative"}}>
               <video muted autoPlay={true} src={this.state.currentUserVideo.url} style={{borderRadius:"1%", boxShadow:"0 1px 5px #000", width:"100%"}}>
               </video>
-              <div style={{position:"absolute", top:"0", paddingTop:".5rem"}}><Icon size="big" name="microphone"/></div>
             </div>
               <div>{this.props.currentUser.username}</div>
             </div> : null}
             {this.state.peerStreams.map(p => (
-              <div style={{textAlign:"center", padding:"1rem", flex:"1 1 20%", maxWidth:"36vw", minWidth:"10vw"}}>
-
-                                <div style={{position:"relative"}}>
-              <video autoPlay={true} src={p.stream} style={{borderRadius:"1%", boxShadow:"0 1px 5px #000", width:"100%"}}>
-              </video>
-              {/* <div style={{position:"absolute", top:"0", paddingTop:".5rem"}}><Icon size="big" name="microphone" /></div> */}
-            </div>
-
-              <div>{this.state.currentUsers.find(c => c.id === p.id).username}</div>
-            </div>
+              <VideoPlayer stream={p.stream} username={this.state.currentUsers.find(c => c.id === p.id).username} />
             ))}
             </Segment>
         ) : null}

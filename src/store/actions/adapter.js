@@ -126,6 +126,7 @@ export const fetchCurrentConversation = (id) => {
     }
   }
   return fetch(`${BASEURL}conversations/${id}`, opts)
+    .then(checkError)
     .then(r => r.json())
 }
 

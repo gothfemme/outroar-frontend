@@ -79,7 +79,6 @@ export const getCurrentConversation = (id) => {
   return (dispatch) => {
     return fetchCurrentConversation(id)
       .then(resp => dispatch(setCurrentConversation(resp)))
-      .catch(console.error)
   }
 }
 
