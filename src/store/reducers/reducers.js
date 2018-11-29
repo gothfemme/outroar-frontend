@@ -13,6 +13,9 @@ const reducer = (state = initialState, action) => {
     case "REMOVE_FAVORITE":
       return { ...state, user: { ...state.user, favorite_channels: state.user.favorite_channels.filter(id => id !== action.payload) } }
     case "ADD_MESSAGE":
+      if (action.payload.hasOwnProperty("is_whisper")) {
+        return { ...state, currentConversation: { ...state.currentConversation, messages: [...state.currentConversation.messages, action.payload] } }
+      }
       if (action.payload.conversation_id === state.currentConversation.id) {
         return { ...state, currentConversation: { ...state.currentConversation, messages: [...state.currentConversation.messages.filter(m => m.id !== action.payload.id), action.payload] } }
       } else {

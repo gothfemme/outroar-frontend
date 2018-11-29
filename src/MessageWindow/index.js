@@ -56,12 +56,16 @@ class MessageWindow extends Component {
     if (newMessage.content.match(/^\/\w+\b/)) {
       switch (newMessage.content.match(/^\/\w+\b/)[0]) {
         case "/whisper":
-          console.log("whisper")
+          // console.log("whisper")
           let arr = newMessage.content.split(/\s+/)
           if (arr[1]) {
             let user = this.state.currentUsers.find(u => u.username === arr[1])
             if (user && this.peers[user.id]) {
-              this.peers[user.id].send(JSON.stringify({ action: "whisper", from: { id: this.props.currentUser.id, username: this.props.currentUser.username }, content: arr.slice(2).join(" ") }))
+              let whisper = { is_whisper: "received", created_at: Date.now(), user: { id: this.props.currentUser.id, username: this.props.currentUser.username, color: this.props.currentUser.color }, content: arr.slice(2).join(" ") }
+              console.log(whisper)
+              this.peers[user.id].send(JSON.stringify(whisper))
+              let whisperForMe = { is_whisper: "sent", created_at: Date.now(), user: { id: user.id, username: user.username, color: null }, content: arr.slice(2).join(" ") }
+              this.props.addWhisper(whisperForMe)
             }
           }
           break;
@@ -174,8 +178,10 @@ class MessageWindow extends Component {
           peerStreams: this.state.peerStreams.filter(p => p.id !== JSON.parse(raw.toString()).user_id)
         })
         return
-      } else if (JSON.parse(raw.toString()).action === "whisper") {
-        console.log(JSON.parse(raw.toString()))
+      } else if (JSON.parse(raw.toString()).hasOwnProperty("is_whisper")) {
+        this.props.addWhisper(JSON.parse(raw.toString()))
+        // console.log("received whisper ?")
+        // console.log(JSON.parse(raw.toString()))
         return
       }
       this.props.addMessage(JSON.parse(raw.toString()))
@@ -364,7 +370,7 @@ class MessageWindow extends Component {
           <div ref={this.handleRef} style={{flex:"1 1 100%", display:"flex", overflowY:"scroll"}}>
           <Comment.Group style={{padding:"1rem 15rem 1rem 1rem", margin:"0", width:"100%", maxWidth:"100%"}}>
 
-            {this.props.currentConversation.messages.map(message => <Message key={message.id} message={message}/>)}
+            {this.props.currentConversation.messages.map(message => <Message key={message.hasOwnProperty("is_whisper") ? message.created_at : message.id } message={message} isWhisper={message.hasOwnProperty("is_whisper")} isAuthor={message.hasOwnProperty("is_whisper") && message.is_whisper === "sent"}/>)}
           </Comment.Group>
         <Menu inverted vertical fitted="vertically" borderless style={{position:"fixed", right:"0", marginTop:"0", borderRadius:"0", height:"100%", borderLeft: "1px solid #999"}}>
           <Menu.Item header >Users</Menu.Item>
@@ -419,6 +425,7 @@ const mapDispatchToProps = (dispatch) => {
   return {
     sendMessage: (message) => dispatch(sendMessage(message)),
     addMessage: (action) => dispatch(action),
+    addWhisper: (body) => dispatch({ type: "ADD_MESSAGE", payload: body }),
     removeCurrentConversation: () => dispatch(setCurrentConversation({ messages: [] })),
     getCurrentConversation: (id) => dispatch(getCurrentConversation(id)),
     addFavorite: (id) => dispatch(addFavorite(id)),
