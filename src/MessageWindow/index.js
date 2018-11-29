@@ -123,7 +123,11 @@ class MessageWindow extends Component {
   handleReceive = (resp) => {
     console.log(resp)
     if (resp.action === "send_signal") {
+      if (this.peers[resp.from] && this.peers[resp.from].connected) {
+        return
+      }
       this.peers[resp.from] = this.createResponsePeer(resp)
+
       console.log(resp.payload.type)
       setTimeout(() => {
         if (this.peers[resp.from] && !this.peers[resp.from].connected) {
