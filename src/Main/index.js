@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { setUser, changeColor } from '../store';
 import debounce from 'lodash/debounce';
 import { Redirect } from 'react-router-dom';
-import { getSplash, searchConversations, postConversation } from '../store/actions/adapter';
+import { getRandom, getSplash, getPopular, searchConversations, postConversation } from '../store/actions/adapter';
 
 class MainContainer extends Component {
   state = {
@@ -13,7 +13,7 @@ class MainContainer extends Component {
     isLoading: true,
     isSearchLoading: false,
     isSearching: false,
-    viewingFavorites: false,
+    currentlyViewing: "",
     channels: []
   }
 
@@ -21,35 +21,56 @@ class MainContainer extends Component {
     if (localStorage.jwt) {
       getSplash()
         .then(res => {
-          console.log(res)
           this.setState({
-            viewingFavorites: true,
             channels: res,
-            isLoading: false
+            isLoading: false,
+            currentlyViewing: "favorites"
           })
         })
     }
   }
 
-  toggleFavorites = () => {
+  toggleView = (view) => {
     this.debouncedSearch.cancel()
     this.setState({
-      viewingFavorites: !this.state.viewingFavorites,
-      isSearchLoading: !this.state.viewingFavorites,
+      currentlyViewing: this.state.currentlyViewing === view ? "" : view,
+      // viewingFavorites: !this.state.viewingFavorites,
+      isSearchLoading: !this.state.currentlyViewing,
       isSearching: false,
       search: "",
       channels: []
     }, () => {
-      if (this.state.viewingFavorites) {
-        getSplash()
-          .then(res => {
-            this.setState({
-              isSearchLoading: false,
-              channels: res
-            })
-          })
+      if (this.state.currentlyViewing === view) {
+        switch (view) {
+          case "favorites":
+            getSplash()
+              .then(res => {
+                this.setState({
+                  isSearchLoading: false,
+                  channels: res
+                })
+              })
+            break;
+          case "popular":
+            getPopular()
+              .then(res => {
+                this.setState({
+                  isSearchLoading: false,
+                  channels: res
+                })
+              })
+            break;
+          default:
+            return
+        }
+
       }
     })
+  }
+
+  randomChannel = () => {
+    getRandom()
+      .then(res => this.props.history.push(`/channels/${res.id}`))
   }
 
   handleColorChange = (color) => {
@@ -84,7 +105,8 @@ class MainContainer extends Component {
       search: e.target.value,
       isSearchLoading: true,
       isSearching: true,
-      viewingFavorites: false
+      currentlyViewing: ""
+      // viewingFavorites: false
     }, this.debouncedSearch)
   }
 
@@ -105,7 +127,9 @@ class MainContainer extends Component {
 
   render() {
     const loadingPhrases = ["Reticulating Splines...", "Loading...", "Perturbing Matrices...", "Destabilizing Orbital Payloads...", "Inserting Chaos Generator..."]
-    let { viewingFavorites, isSearchLoading, isLoading, isSearching, search, channels } = this.state
+    const { currentlyViewing, isSearchLoading, isLoading, isSearching, search, channels } = this.state
+    const viewingFavorites = !!(currentlyViewing === "favorites")
+    const viewingPopular = !!(currentlyViewing === "popular")
     const colorKey = {
       "red": "#db2828",
       "orange": "#f2711c",
@@ -155,14 +179,14 @@ class MainContainer extends Component {
                 <Input  input={<input onChange={this.handleChange} value={search}></input>} loading={isSearchLoading} icon="search" style={{width:"35vw", marginRight:"1rem"}} placeholder="Find a channel..."></Input>
                 <Popup
                   content="View favorite channels"
-                  trigger={<Icon link onClick={this.toggleFavorites} color={viewingFavorites ? "yellow" : "grey"} size="big" style={{ verticalAlign:"-0.25rem", marginRight:".5rem",cursor:"pointer" }} name={viewingFavorites ? "star" : "star outline"} />}
+                  trigger={<Icon link onClick={() => this.toggleView("favorites")} color={viewingFavorites ? "yellow" : "grey"} size="big" style={{ verticalAlign:"-0.25rem", marginRight:".5rem",cursor:"pointer" }} name={viewingFavorites ? "star" : "star outline"} />}
                   position="top center"
                   inverted
                  />
                  <Popup
                    content="View most popular"
                    trigger={
-                     <Icon link onClick={this.toggleFavorites} color={viewingFavorites ? "yellow" : "grey"} size="big" style={{ verticalAlign:"-0.25rem", marginRight:".5rem",cursor:"pointer" }} name="trophy" />
+                     <Icon link onClick={() => this.toggleView("popular")} color={viewingPopular ? "yellow" : "grey"} size="big" style={{ verticalAlign:"-0.25rem", marginRight:".5rem",cursor:"pointer" }} name="trophy" />
                    }
                    position="top center"
                    inverted
@@ -170,7 +194,7 @@ class MainContainer extends Component {
                  <Popup
                    content="Random!"
                    trigger={
-                     <i className="fas fa-dice fa-2x" style={{ color:"#767676", verticalAlign:"-0.25rem", cursor:"pointer", opacity:".8" }}/>
+                     <i onClick={this.randomChannel} className="fas fa-dice fa-2x" style={{ color:"#767676", verticalAlign:"-0.25rem", cursor:"pointer", opacity:".8" }}/>
                  }
                    position="top center"
                    inverted

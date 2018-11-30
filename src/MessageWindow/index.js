@@ -134,7 +134,7 @@ class MessageWindow extends Component {
   }
 
   createSignalingPeer = (id) => {
-    let peer = new Peer({ initiator: true, trickle: false })
+    let peer = new Peer({ initiator: true, trickle: false, stream: this.state.currentUserVideo.stream })
     peer.on('signal', data => {
       this.refs.signalServer.perform('send_signal', { payload: data, to: id })
     })
@@ -144,7 +144,7 @@ class MessageWindow extends Component {
   createResponsePeer = (resp) => {
     let peer = this.peers[resp.from]
     if (!peer) {
-      peer = Peer({ initiator: false, trickle: false })
+      peer = Peer({ initiator: false, trickle: false, stream: this.state.currentUserVideo.stream })
       peer.on('signal', data => {
         this.refs.signalServer.perform('send_signal', { payload: data, to: resp.from })
       })
@@ -152,9 +152,9 @@ class MessageWindow extends Component {
     if (!peer.connected) {
       peer.on('connect', () => {
         console.log('hit connect')
-        if (this.state.currentUserVideo.stream) {
-          peer.addStream(this.state.currentUserVideo.stream)
-        }
+        // if (this.state.currentUserVideo.stream) {
+        //   peer.addStream(this.state.currentUserVideo.stream)
+        // }
       })
       peer.on('data', raw => {
         if (JSON.parse(raw.toString()).action === "video_stopped") {

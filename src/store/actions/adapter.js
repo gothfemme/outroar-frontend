@@ -62,6 +62,19 @@ export const getSplash = () => {
     .then(r => r.json())
 }
 
+export const getRandom = () => {
+  const opts = {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      "accept": "application/json",
+      "Authorization": `Bearer ${localStorage.jwt}`
+    }
+  }
+  return fetch(`${BASEURL}conversations/random`, opts)
+    .then(r => r.json())
+}
+
 export const getPopular = () => {
   const opts = {
     method: "GET",
