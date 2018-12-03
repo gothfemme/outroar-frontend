@@ -12,6 +12,8 @@ const reducer = (state = initialState, action) => {
       return { ...state, user: { ...state.user, favorite_channels: [...state.user.favorite_channels, action.payload] } }
     case "REMOVE_FAVORITE":
       return { ...state, user: { ...state.user, favorite_channels: state.user.favorite_channels.filter(id => id !== action.payload) } }
+    case "CHANGE_CHANNEL_PASSWORD":
+      return { ...state, currentConversation: { ...state.currentConversation, has_password: action.payload } }
     case "ADD_MESSAGE":
       if (action.payload.hasOwnProperty("is_whisper")) {
         return { ...state, currentConversation: { ...state.currentConversation, messages: [...state.currentConversation.messages, action.payload] } }

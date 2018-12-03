@@ -1,4 +1,4 @@
-import { getToken, fetchCurrentUser, fetchCurrentConversation, postMessage, postUser, postFavorite, patchUser, deleteFavorite } from './adapter';
+import { getToken, fetchCurrentUser, fetchCurrentConversation, postMessage, postUser, postFavorite, patchUser, deleteFavorite, patchConversation } from './adapter';
 
 // actions
 
@@ -51,12 +51,26 @@ export const addMessage = (message) => {
   }
 }
 
+const changeChannelPassword = (boolean) => {
+  return {
+    type: "CHANGE_CHANNEL_PASSWORD",
+    payload: boolean
+  }
+}
+
 // thunks
 
 export const removeFavorite = (id) => {
   return (dispatch) => {
     dispatch(removeFavoriteFromStore(id))
     return deleteFavorite(id)
+  }
+}
+
+export const addChannelPassword = (body, id) => {
+  return (dispatch) => {
+    return patchConversation(body, id)
+      .then(() => dispatch(changeChannelPassword(!!body.password)))
   }
 }
 

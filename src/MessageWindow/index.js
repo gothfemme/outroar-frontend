@@ -1,12 +1,14 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Dropdown, Ref, Menu, Popup, Icon, Loader, Header, Input, Segment, Comment, Modal, Button } from 'semantic-ui-react';
+import { Dropdown, Ref, Menu, Popup, Icon, Loader, Header, Input, Segment, Comment, Button } from 'semantic-ui-react';
 import Message from './Message';
+import ChannelPasswordForm from './ChannelPasswordForm';
 import VideoPlayer from './VideoPlayer';
 import Peer from 'simple-peer';
 import { Redirect } from 'react-router-dom';
 import { ActionCable } from 'react-actioncable-provider';
-import { sendMessage, getCurrentConversation, setCurrentConversation, removeFavorite, addFavorite } from '../store';
+import { validateConversationPassword, deleteConversation } from '../store/actions/adapter';
+import { sendMessage, getCurrentConversation, setCurrentConversation, removeFavorite, addFavorite, addChannelPassword } from '../store';
 
 class MessageWindow extends Component {
   constructor() {
@@ -26,7 +28,8 @@ class MessageWindow extends Component {
     loadErr: false,
     showUserMenu: true,
     modalOpen: false,
-    channelPassword: ""
+    channelPassword: "",
+    showLogin: true
   }
 
   componentDidMount = () => {
@@ -195,12 +198,6 @@ class MessageWindow extends Component {
     });
   }
 
-  handleChannelPasswordChange = (e) => {
-    this.setState({
-      channelPassword: e.target.value
-    });
-  }
-
   handlePresenceConnect = () => {
     const sayHi = this.refs.presenceChannel.perform("user_join", { user_id: this.props.currentUser.id, username: this.props.currentUser.username })
     console.log("presence connect")
@@ -241,6 +238,15 @@ class MessageWindow extends Component {
           });
         }
         break;
+      case "kick_user":
+        if (resp.user_id === this.props.currentUser.id) {
+          this.leaveChannel()
+        }
+        break;
+      case "delete_channel":
+
+        this.leaveChannel()
+        break;
       case "user_left":
         if (this.peers[resp.user_id] && this.peers[resp.user_id].connected) {
           this.peers[resp.user_id].destroy()
@@ -256,8 +262,40 @@ class MessageWindow extends Component {
     }
   }
 
+  removePassword = () => {
+    this.props.addChannelPassword({ password: null }, this.props.currentConversation.id)
+  }
+
+  channelLogin = (e) => {
+    e.preventDefault()
+    validateConversationPassword({ password: this.state.channelPassword }, this.props.currentConversation.id)
+      .then(res => {
+        if (res.success) {
+          this.setState({
+            showLogin: false
+          });
+        }
+      })
+    this.setState({
+      channelPassword: ''
+    });
+  }
+
+  deleteRoom = () => {
+    deleteConversation(this.props.currentConversation.id)
+      .then(r => {
+        if (r.success) {
+          return this.refs.presenceChannel.perform("delete_channel")
+        }
+      })
+  }
+
   handleConnect = () => {
     console.log("connected to signal")
+  }
+
+  kickUser = (id) => {
+    this.refs.presenceChannel.perform("kick_user", { user_id: id })
   }
 
   leaveChannel = () => {
@@ -275,6 +313,12 @@ class MessageWindow extends Component {
     });
   }
 
+  closeModal = () => {
+    this.setState({
+      modalOpen: false
+    })
+  }
+
   render() {
     const conversation = this.props.currentConversation
     const loadingPhrases = ["Reticulating Splines...", "Loading...", "Perturbing Matrices...", "Destabilizing Orbital Payloads...", "Inserting Chaos Generator..."]
@@ -289,11 +333,11 @@ class MessageWindow extends Component {
         <Header size="huge">This channel does not exist.</Header>
       </div>
     }
-    if (true) {
+    if (!this.state.isLoading && this.props.currentConversation.has_password && !this.props.currentConversation.is_admin && this.state.showLogin) {
       return <div style={{width:"100vw", height:"100vh", paddingTop:"40vh"}}>
         <Segment style={{width:"30%", margin:"auto"}}>
         <p>This channel is locked and requires a password.</p>
-        <form>
+        <form onSubmit={this.channelLogin}>
         <Input type="password" fluid icon="lock" onChange={this.handleChannelPasswordChange} value={this.state.channelPassword} placeholder="Enter password..." />
         <Button color="pink" fluid style={{marginTop:"1rem"}}>Let me in!</Button>
       </form>
@@ -306,20 +350,8 @@ class MessageWindow extends Component {
         <ActionCable ref="signalServer" channel={{channel:"SignalChannel", room: this.props.match.params.id, token:localStorage.jwt}} onReceived={this.handleReceive} onConnected={this.handleConnect}/>
         <ActionCable ref="presenceChannel" channel={{channel:"PresenceChannel", room: this.props.match.params.id, token:localStorage.jwt}} onReceived={this.handlePresenceReceive} onConnected={this.handlePresenceConnect}/>
       </React.Fragment>}
-      <Modal size="small" open={this.state.modalOpen} onClose={() => this.setState({
-        modalOpen: false
-      })}>
-        <Modal.Header>Make Channel Private</Modal.Header>
-        <Modal.Content>
-          <Input onChange={this.handleChannelPasswordChange} value={this.state.channelPassword} icon="lock" type="password" fluid placeholder="Create a channel password..."></Input>
-        </Modal.Content>
-        <Modal.Actions>
-          <Button negative onClick={() => this.setState({
-            modalOpen: false
-          })}>Nevermind</Button>
-          <Button positive content='Submit' />
-        </Modal.Actions>
-      </Modal>
+
+      <ChannelPasswordForm open={this.state.modalOpen} close={this.closeModal} />
 
         <div style={{height:"100vh", width:"100vw", display: "flex", flexDirection: "column"}}>
 
@@ -338,28 +370,36 @@ class MessageWindow extends Component {
           </div>
 
           <div style={{flex:"0 1 auto"}}>
-              <Popup
+              {this.props.currentConversation.has_password && <Popup
                 inverted
                 position="bottom center"
                 content="Private"
                 trigger={
               <Icon name="lock" size="small" style={{marginLeft:".3rem"}} />
             }
-          />
+          />}
           {/* <Header as="h4" style={{display:"inline"}}> */}
-            <Dropdown pointing text={conversation.name ? conversation.name : conversation.users.map(userObj =>  userObj.username).join(', ')}>
+            <Dropdown pointing text={conversation.name}>
               <Dropdown.Menu>
                 <Dropdown.Item onClick={() => this.props.isFavorited ? this.props.removeFavorite(this.props.currentConversation.id) : this.props.addFavorite(this.props.currentConversation.id)}>
                   <Icon
                     color={this.props.isFavorited ? "yellow" : "default"} name={`star${this.props.isFavorited ? "" : " outline"}`}
                     ></Icon> {this.props.isFavorited ? "Remove from favorites" : "Add to favorites"}
                 </Dropdown.Item>
-                <Dropdown.Divider />
-                <Dropdown.Header>Admin Settings</Dropdown.Header>
-                <Dropdown.Item icon="lock" onClick={() => this.setState({
-                  modalOpen: true
-                })} text="Make Channel Private"/>
-                <Dropdown.Item icon="times" text="Delete Channel"/>
+                {this.props.currentConversation.is_admin && <React.Fragment>
+                  <Dropdown.Divider />
+                  <Dropdown.Header>Admin Settings</Dropdown.Header>
+                  <Dropdown.Item icon={this.props.currentConversation.has_password ? "unlock" : "lock"} onClick={() => {
+                    if (this.props.currentConversation.has_password) {
+                      return this.removePassword()
+                    }
+                    this.setState({
+                    modalOpen: true
+                  })}
+                } text={this.props.currentConversation.has_password ? "Make Channel Public" :"Make Channel Private"}/>
+                  <Dropdown.Item onClick={this.deleteRoom} icon="times" text="Delete Channel"/>
+                </React.Fragment>
+              }
               </Dropdown.Menu>
             </Dropdown>
             {/* {conversation.name ? conversation.name : conversation.users.map(userObj =>  userObj.username).join(', ')} */}
@@ -421,17 +461,20 @@ class MessageWindow extends Component {
         </Ref>
         { this.state.showUserMenu ? <Menu inverted vertical fitted="vertically" borderless style={{marginLeft:"auto", flex:"0 0 auto", marginTop:"0", borderRadius:"0", height:"100%", borderLeft: "1px solid #999"}}>
           <Menu.Item header >Users</Menu.Item>
-          {this.state.currentUsers.map(user => (
+          {this.state.currentUsers.map(user => ( user.id === this.props.currentUser.id ? <Menu.Item key={user.id}  link>{user.username} {conversation.owner === user.username && <i style={{float:"right"}} className="fas fa-crown"></i>}</Menu.Item> :
             <Popup
               inverted
               size="tiny"
-              content={<Menu size="tiny" vertical inverted compact><Menu.Item onClick={() => {this.setState({
+              content={<Menu size="tiny" vertical inverted compact>
+                {this.props.currentConversation.is_admin && <Menu.Item onClick={() => this.kickUser(user.id)}>Kick</Menu.Item>}
+                <Menu.Item onClick={() => {this.setState({
                 message: `/whisper ${user.username}`
-              }, () => this.messageField.focus())}} link>Whisper</Menu.Item></Menu>}
+              }, () => this.messageField.focus())}} link>Whisper</Menu.Item>
+            </Menu>}
               position="left center"
               on="click"
               trigger={
-            <Menu.Item key={user.id}  link>{user.username}</Menu.Item>
+            <Menu.Item key={user.id} link>{user.username} {conversation.owner === user.username && <i style={{float:"right"}} className="fas fa-crown"></i>}</Menu.Item>
           }/>
           ))}
 
@@ -475,7 +518,8 @@ const mapDispatchToProps = (dispatch) => {
     removeCurrentConversation: () => dispatch(setCurrentConversation({ messages: [] })),
     getCurrentConversation: (id) => dispatch(getCurrentConversation(id)),
     addFavorite: (id) => dispatch(addFavorite(id)),
-    removeFavorite: (id) => dispatch(removeFavorite(id))
+    removeFavorite: (id) => dispatch(removeFavorite(id)),
+    addChannelPassword: (password, id) => dispatch(addChannelPassword(password, id))
   }
 }
 

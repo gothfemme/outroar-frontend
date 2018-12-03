@@ -36,6 +36,46 @@ export const searchConversations = (search) => {
     .then(r => r.json())
 }
 
+export const patchConversation = (body, id) => {
+  const opts = {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "accept": "application/json",
+      "Authorization": `Bearer ${localStorage.jwt}`
+    },
+    body: JSON.stringify({ conversation: body })
+  }
+  return fetch(`${BASEURL}conversations/${id}`, opts)
+}
+
+export const deleteConversation = (id) => {
+  const opts = {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "accept": "application/json",
+      "Authorization": `Bearer ${localStorage.jwt}`
+    }
+  }
+  return fetch(`${BASEURL}conversations/${id}`, opts)
+    .then(r => r.json())
+}
+
+export const validateConversationPassword = (password, id) => {
+  const opts = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "accept": "application/json",
+      "Authorization": `Bearer ${localStorage.jwt}`
+    },
+    body: JSON.stringify(password)
+  }
+  return fetch(`${BASEURL}conversations/${id}/validate`, opts)
+    .then(r => r.json())
+}
+
 export const postUser = (data) => {
   const opts = {
     method: "POST",

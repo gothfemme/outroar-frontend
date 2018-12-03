@@ -14,11 +14,11 @@ const SearchListing = ({ channel, isFavorited, addFavorite, removeFavorite }) =>
           color={isFavorited ? "yellow" : "grey"}
           name={`star${isFavorited ? "" : " outline"}`}
           size='large'
-          verticalAlign='middle' 
+          verticalAlign='middle'
         />
         <List.Content>
           <List.Header as={Link} to={`/channels/${channel.id}`}>{channel.name}</List.Header>
-          <List.Description as={Link} to={`/channels/${channel.id}`}>Created {timeAgo(channel.created_at)}</List.Description>
+          <List.Description as={Link} to={`/channels/${channel.id}`}>Created {timeAgo(channel.created_at)} by {channel.owner}</List.Description>
         </List.Content>
       </List.Item>
   );
