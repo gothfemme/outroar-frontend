@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Menu, Popup, Icon, Loader, Header, Input, Segment, Comment } from 'semantic-ui-react';
+import { Dropdown, Ref, Menu, Popup, Icon, Loader, Header, Input, Segment, Comment, Modal, Button } from 'semantic-ui-react';
 import Message from './Message';
 import VideoPlayer from './VideoPlayer';
 import Peer from 'simple-peer';
@@ -23,7 +23,10 @@ class MessageWindow extends Component {
     currentUserVideo: { stream: null, url: "" },
     currentUsers: [],
     peerStreams: [],
-    loadErr: false
+    loadErr: false,
+    showUserMenu: true,
+    modalOpen: false,
+    channelPassword: ""
   }
 
   componentDidMount = () => {
@@ -44,7 +47,6 @@ class MessageWindow extends Component {
 
   handleSubmit = (e) => {
     e.preventDefault()
-
     const newMessage = {
       content: this.state.message,
       conversation_id: this.props.currentConversation.id
@@ -93,12 +95,18 @@ class MessageWindow extends Component {
     }
   }
 
+  toggleUserMenu = () => {
+    this.setState({
+      showUserMenu: !this.state.showUserMenu
+    });
+  }
+
   toggleVideo = () => {
     if (this.state.currentUserVideo.stream) {
       this.state.currentUserVideo.stream.getTracks().forEach(track => track.stop())
       this.setState({
         currentUserVideo: { stream: null, url: "" }
-      });
+      }, () => this.state.messageContainer.scrollTo({ top: this.state.messageContainer.scrollHeight }));
       Object.values(this.peers).forEach(peer => {
         if (peer.connected) {
           peer.send(JSON.stringify({ action: "video_stopped", user_id: this.props.currentUser.id }))
@@ -111,7 +119,7 @@ class MessageWindow extends Component {
         this.setState({
           isVideoCall: true,
           currentUserVideo: { stream: stream, url: window.URL.createObjectURL(stream) }
-        });
+        }, () => this.state.messageContainer.scrollTo({ top: this.state.messageContainer.scrollHeight }));
         Object.values(this.peers).forEach(peer => {
           if (peer.connected) {
             peer.addStream(stream)
@@ -152,9 +160,6 @@ class MessageWindow extends Component {
     if (!peer.connected) {
       peer.on('connect', () => {
         console.log('hit connect')
-        // if (this.state.currentUserVideo.stream) {
-        //   peer.addStream(this.state.currentUserVideo.stream)
-        // }
       })
       peer.on('data', raw => {
         if (JSON.parse(raw.toString()).action === "video_stopped") {
@@ -187,6 +192,12 @@ class MessageWindow extends Component {
   handleChange = (e) => {
     this.setState({
       message: e.target.value
+    });
+  }
+
+  handleChannelPasswordChange = (e) => {
+    this.setState({
+      channelPassword: e.target.value
     });
   }
 
@@ -278,7 +289,16 @@ class MessageWindow extends Component {
         <Header size="huge">This channel does not exist.</Header>
       </div>
     }
-
+    if (true) {
+      return <div style={{width:"100vw", height:"100vh", paddingTop:"40vh"}}>
+        <Segment style={{width:"30%", margin:"auto"}}>
+        <p>This channel is locked and requires a password.</p>
+        <form>
+        <Input type="password" fluid icon="lock" onChange={this.handleChannelPasswordChange} value={this.state.channelPassword} placeholder="Enter password..." />
+        <Button color="pink" fluid style={{marginTop:"1rem"}}>Let me in!</Button>
+      </form>
+      </Segment></div>
+    }
     return (
       <React.Fragment>
 
@@ -286,11 +306,26 @@ class MessageWindow extends Component {
         <ActionCable ref="signalServer" channel={{channel:"SignalChannel", room: this.props.match.params.id, token:localStorage.jwt}} onReceived={this.handleReceive} onConnected={this.handleConnect}/>
         <ActionCable ref="presenceChannel" channel={{channel:"PresenceChannel", room: this.props.match.params.id, token:localStorage.jwt}} onReceived={this.handlePresenceReceive} onConnected={this.handlePresenceConnect}/>
       </React.Fragment>}
+      <Modal size="small" open={this.state.modalOpen} onClose={() => this.setState({
+        modalOpen: false
+      })}>
+        <Modal.Header>Make Channel Private</Modal.Header>
+        <Modal.Content>
+          <Input onChange={this.handleChannelPasswordChange} value={this.state.channelPassword} icon="lock" type="password" fluid placeholder="Create a channel password..."></Input>
+        </Modal.Content>
+        <Modal.Actions>
+          <Button negative onClick={() => this.setState({
+            modalOpen: false
+          })}>Nevermind</Button>
+          <Button positive content='Submit' />
+        </Modal.Actions>
+      </Modal>
 
         <div style={{height:"100vh", width:"100vw", display: "flex", flexDirection: "column"}}>
 
-        <Segment textAlign="center" size="big" style={{borderRadius:"0", flex:"0 0 auto", width:"100%", zIndex:"2", marginBottom:"0"}}>
-          <span style={{float:"left"}}>
+        <Segment textAlign="center" size="big" style={{borderRadius:"0", display: "flex", justifyContent:"space-between", alignItems:"center", flex:"0 0 auto", width:"100%", zIndex:"2", marginBottom:"0"}}>
+
+          <div style={{flex:"0 1 auto", float:"left"}}>
             <Popup
               inverted
               position="bottom center"
@@ -300,34 +335,64 @@ class MessageWindow extends Component {
                 // <Icon link onClick={this.leaveChannel} name="home" style={{cursor:"pointer"}}></Icon>
               }
             />
-          </span>
+          </div>
 
-        <span style={{float:"right"}}>
+          <div style={{flex:"0 1 auto"}}>
+              <Popup
+                inverted
+                position="bottom center"
+                content="Private"
+                trigger={
+              <Icon name="lock" size="small" style={{marginLeft:".3rem"}} />
+            }
+          />
+          {/* <Header as="h4" style={{display:"inline"}}> */}
+            <Dropdown pointing text={conversation.name ? conversation.name : conversation.users.map(userObj =>  userObj.username).join(', ')}>
+              <Dropdown.Menu>
+                <Dropdown.Item onClick={() => this.props.isFavorited ? this.props.removeFavorite(this.props.currentConversation.id) : this.props.addFavorite(this.props.currentConversation.id)}>
+                  <Icon
+                    color={this.props.isFavorited ? "yellow" : "default"} name={`star${this.props.isFavorited ? "" : " outline"}`}
+                    ></Icon> {this.props.isFavorited ? "Remove from favorites" : "Add to favorites"}
+                </Dropdown.Item>
+                <Dropdown.Divider />
+                <Dropdown.Header>Admin Settings</Dropdown.Header>
+                <Dropdown.Item icon="lock" onClick={() => this.setState({
+                  modalOpen: true
+                })} text="Make Channel Private"/>
+                <Dropdown.Item icon="times" text="Delete Channel"/>
+              </Dropdown.Menu>
+            </Dropdown>
+            {/* {conversation.name ? conversation.name : conversation.users.map(userObj =>  userObj.username).join(', ')} */}
+          {/* </Header> */}
+
+        </div>
+
+        <div style={{flex:"0 1 auto", float:"right"}}>
+          { this.state.currentUserVideo.stream ?
+            (
+              <Popup
+                inverted
+                position="bottom right"
+                content={this.state.isMuted ? "Unmute" : "Mute"}
+                trigger={<i onClick={this.muteStream} className={`link fas fa-microphone${this.state.isMuted ? "-slash" : ""}`} style={{cursor:"pointer", paddingRight:"1.5rem"}}></i>}
+              />) : null
+            }
             <Popup
               inverted
               position="bottom right"
               content={this.state.currentUserVideo.stream ? "Stop Video" : "Start Video"}
               trigger={
-            <i onClick={this.toggleVideo} className={`link fas fa-video${this.state.currentUserVideo.stream ? "-slash" : ""}`} style={{float:"right", cursor:"pointer", paddingRight:"1rem"}}></i>}
+            <i onClick={this.toggleVideo} className={`link fas fa-video${this.state.currentUserVideo.stream ? "-slash" : ""}`} style={{cursor:"pointer", paddingRight:"1rem"}}></i>}
           />
-        </span>
+          <Popup
+            inverted
+            position="bottom right"
+            content="Toggle User List"
+            trigger={
+          <i onClick={this.toggleUserMenu} className="fas fa-users" style={{float:"right", cursor:"pointer", paddingRight:".5rem"}}></i>}
+        />
+        </div>
 
-        { this.state.currentUserVideo.stream ?
-          (<span style={{float:"right"}}>
-            <Popup
-              inverted
-              position="bottom right"
-              content={this.state.isMuted ? "Unmute" : "Mute"}
-              trigger={<i onClick={this.muteStream} className={`link fas fa-microphone${this.state.isMuted ? "-slash" : ""}`} style={{cursor:"pointer", paddingRight:"1.5rem"}}></i>}
-            />
-        </span> ) : null
-          }
-          <Header as="h5" style={{display:"inline"}}>
-            <Icon link onClick={() => this.props.isFavorited ? this.props.removeFavorite(this.props.currentConversation.id) : this.props.addFavorite(this.props.currentConversation.id)}
-            color={this.props.isFavorited ? "yellow" : "grey"} name={`star${this.props.isFavorited ? "" : " outline"}`}
-            size='large'></Icon>
-            {conversation.name ? conversation.name : conversation.users.map(userObj =>  userObj.username).join(', ')}
-          </Header>
         </Segment>
 
         {this.state.currentUserVideo.stream || this.state.peerStreams.length > 0 ? (
@@ -347,12 +412,14 @@ class MessageWindow extends Component {
             </Segment>
         ) : null}
 
-          <div ref={this.handleRef} style={{flex:"1 1 100%", display:"flex", overflowY:"scroll"}}>
-          <Comment.Group style={{padding:"1rem 15rem 1rem 1rem", margin:"0", width:"100%", maxWidth:"100%"}}>
+          <div style={{flex:"1 1 100%", display:"flex"}}>
+            <Ref innerRef={this.handleRef}>
+          <Comment.Group style={{padding:"1rem 1rem 1rem 1rem", flex:"1 1 auto", margin:"0", maxWidth:"100%", overflowY:"scroll"}}>
 
             {this.props.currentConversation.messages.map(message => <Message key={message.hasOwnProperty("is_whisper") ? message.created_at : message.id } message={message} isWhisper={message.hasOwnProperty("is_whisper")} isAuthor={message.hasOwnProperty("is_whisper") && message.is_whisper === "sent"}/>)}
           </Comment.Group>
-        <Menu inverted vertical fitted="vertically" borderless style={{position:"fixed", right:"0", marginTop:"0", borderRadius:"0", height:"100%", borderLeft: "1px solid #999"}}>
+        </Ref>
+        { this.state.showUserMenu ? <Menu inverted vertical fitted="vertically" borderless style={{marginLeft:"auto", flex:"0 0 auto", marginTop:"0", borderRadius:"0", height:"100%", borderLeft: "1px solid #999"}}>
           <Menu.Item header >Users</Menu.Item>
           {this.state.currentUsers.map(user => (
             <Popup
@@ -368,7 +435,7 @@ class MessageWindow extends Component {
           }/>
           ))}
 
-        </Menu>
+        </Menu> : null}
       </div>
 
         <Segment secondary style={{borderRadius:"0", flex:"0 0 auto", marginTop:"0", width:"100%"}}>

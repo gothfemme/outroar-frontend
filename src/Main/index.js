@@ -70,6 +70,7 @@ class MainContainer extends Component {
 
   randomChannel = () => {
     getRandom()
+      // .then(res => console.log(res))
       .then(res => this.props.history.push(`/channels/${res.id}`))
   }
 
@@ -178,13 +179,13 @@ class MainContainer extends Component {
               <Container style={{textAlign:"center"}}>
                 <Input  input={<input onChange={this.handleChange} value={search}></input>} loading={isSearchLoading} icon="search" style={{width:"35vw", marginRight:"1rem"}} placeholder="Find a channel..."></Input>
                 <Popup
-                  content="View favorite channels"
+                  content="Favorites"
                   trigger={<Icon link onClick={() => this.toggleView("favorites")} color={viewingFavorites ? "yellow" : "grey"} size="big" style={{ verticalAlign:"-0.25rem", marginRight:".5rem",cursor:"pointer" }} name={viewingFavorites ? "star" : "star outline"} />}
                   position="top center"
                   inverted
                  />
                  <Popup
-                   content="View most popular"
+                   content="Most Popular"
                    trigger={
                      <Icon link onClick={() => this.toggleView("popular")} color={viewingPopular ? "yellow" : "grey"} size="big" style={{ verticalAlign:"-0.25rem", marginRight:".5rem",cursor:"pointer" }} name="trophy" />
                    }
@@ -217,7 +218,14 @@ class MainContainer extends Component {
                     </List.Content>
                   </List.Item>
                                       ) : null}
-                   {(!isSearchLoading && (isSearching || viewingFavorites))&& channels.map(channel => <SearchListing key={channel.id} channel={channel}/>)}
+                  {viewingPopular ? (
+                    <List.Item>
+                   <List.Content>
+                     <List.Header>The most popular channels, by favorites.</List.Header>
+                   </List.Content>
+                 </List.Item>
+                                     ) : null}
+                   {(!isSearchLoading && (isSearching || viewingFavorites || viewingPopular))&& channels.map(channel => <SearchListing key={channel.id} channel={channel}/>)}
                    {isSearching && !isSearchLoading && channels.length === 0 ? (<List.Item>
                       <List.Icon size="large" color="grey" verticalAlign="middle" name='question' />
                       <List.Content onClick={this.newChannel}>

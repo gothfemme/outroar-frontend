@@ -18,7 +18,7 @@ const Message = ({ message, isWhisper, isAuthor }) => {
   return (
     <Comment>
         <Comment.Content style={{fontStyle:isWhisper ? "italic" : "initial"}}>
-          <Comment.Author as="a" style={{color:isWhisper ? "rgb(120,120,120)" : (message.user.color ? colorKey[message.user.color] : colorKey["black"])}}>{isWhisper ? (<span>Whisper {isAuthor ? "to" : "from"} </span>) : null}<span>{message.user.username}</span></Comment.Author>
+          <Comment.Author as="a" style={{color: isWhisper ? "rgb(180,180,180)" : (message.user.color ? colorKey[message.user.color] : colorKey["black"])}}>{isWhisper ? (<span>Whisper {isAuthor ? "to" : "from"} </span>) : null}<span style={{color: isWhisper ? "rgb(120,120,120)" : "inherit"}}>{message.user.username}</span></Comment.Author>
           <Comment.Metadata>
             <div>{`${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()} ${d.getHours() > 12 ? d.getHours() - 12 : d.getHours()}:${(d.getMinutes() < 10 ? "0" : "") + d.getMinutes()} ${d.getHours() > 12 ? "PM" : "AM"}`}</div>
           </Comment.Metadata>
