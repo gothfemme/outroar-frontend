@@ -43,6 +43,7 @@ function timeAgo(time) {
   }
   var i = 0,
     format;
+  // eslint-disable-next-line
   while (format = time_formats[i++])
     if (seconds < format[0]) {
       if (typeof format[2] == 'string')

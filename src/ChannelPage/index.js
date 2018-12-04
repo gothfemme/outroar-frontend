@@ -1,23 +1,23 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Dropdown, Ref, Menu, Popup, Icon, Loader, Header, Input, Segment, Comment, Button } from 'semantic-ui-react';
-import Message from './Message';
+import { Menu, Comment, Ref, Dropdown, Popup, Icon, Loader, Header, Input, Segment, Button } from 'semantic-ui-react';
 import ChannelPasswordForm from './ChannelPasswordForm';
-import VideoPlayer from './VideoPlayer';
+import VideoContainer from './VideoContainer';
+import MessageForm from './MessageForm';
+import Message from './Message';
 import Peer from 'simple-peer';
 import { Redirect } from 'react-router-dom';
 import { ActionCable } from 'react-actioncable-provider';
 import { validateConversationPassword, deleteConversation } from '../store/actions/adapter';
-import { sendMessage, getCurrentConversation, setCurrentConversation, removeFavorite, addFavorite, addChannelPassword } from '../store';
+import { getCurrentConversation, setCurrentConversation, removeFavorite, addFavorite, addChannelPassword } from '../store';
 
-class MessageWindow extends Component {
+class ChannelPage extends Component {
   constructor() {
     super()
     this.peers = {}
   }
 
   state = {
-    message: "",
     isLoading: true,
     isVideoCall: false,
     isMuted: false,
@@ -33,60 +33,26 @@ class MessageWindow extends Component {
   }
 
   componentDidMount = () => {
-    this.props.getCurrentConversation(this.props.match.params.id)
-      .then(() => this.setState({
-        isLoading: false
-      }))
-      .catch(async (error) => {
-        const err = await error.json()
-        console.log(err)
-        this.setState({
-          isLoading: false,
-          loadErr: true
-        });
-        return undefined
-      })
-  }
-
-  handleSubmit = (e) => {
-    e.preventDefault()
-    const newMessage = {
-      content: this.state.message,
-      conversation_id: this.props.currentConversation.id
-    }
-    this.setState({
-      message: ""
-    });
-    if (newMessage.content.match(/^\/\w+\b/)) {
-      switch (newMessage.content.match(/^\/\w+\b/)[0]) {
-        case "/whisper":
-          let arr = newMessage.content.split(/\s+/)
-          if (arr[1]) {
-            let user = this.state.currentUsers.find(u => u.username === arr[1])
-            if (user && this.peers[user.id]) {
-              let whisper = { is_whisper: "received", created_at: Date.now(), user: { id: this.props.currentUser.id, username: this.props.currentUser.username, color: this.props.currentUser.color }, content: arr.slice(2).join(" ") }
-              this.peers[user.id].send(JSON.stringify(whisper))
-              let whisperForMe = { is_whisper: "sent", created_at: Date.now(), user: { id: user.id, username: user.username, color: null }, content: arr.slice(2).join(" ") }
-              this.props.addWhisper(whisperForMe)
-            }
-          }
-          break;
-        default:
-      }
-    } else {
-      this.props.sendMessage(newMessage)
-        .then(action => {
-          console.log(action, this.peers)
-          Object.values(this.peers).forEach(peer => {
-            if (peer.connected) {
-              peer.send(JSON.stringify(action))
-            }
-          })
+    if (localStorage.jwt) {
+      this.props.getCurrentConversation(this.props.match.params.id)
+        .then(() => this.setState({
+          isLoading: false
+        }))
+        .catch(async (error) => {
+          const err = await error.json()
+          console.log(err)
+          this.setState({
+            isLoading: false,
+            loadErr: true
+          });
+          return undefined
         })
     }
   }
 
-  handleRef = node => {
+  setMessageInputRef = node => this.messageField = node
+
+  setMessageContainerRef = node => {
     this.setState({
       messageContainer: node
     }, () => this.state.messageContainer.scrollTo({ top: this.state.messageContainer.scrollHeight }));
@@ -98,11 +64,7 @@ class MessageWindow extends Component {
     }
   }
 
-  toggleUserMenu = () => {
-    this.setState({
-      showUserMenu: !this.state.showUserMenu
-    });
-  }
+  toggleUserMenu = () => this.setState({ showUserMenu: !this.state.showUserMenu });
 
   toggleVideo = () => {
     if (this.state.currentUserVideo.stream) {
@@ -190,12 +152,6 @@ class MessageWindow extends Component {
 
     peer.signal(resp.payload)
     return peer
-  }
-
-  handleChange = (e) => {
-    this.setState({
-      message: e.target.value
-    });
   }
 
   handlePresenceConnect = () => {
@@ -290,13 +246,9 @@ class MessageWindow extends Component {
       })
   }
 
-  handleConnect = () => {
-    console.log("connected to signal")
-  }
+  handleConnect = () => console.log("connected to signal")
 
-  kickUser = (id) => {
-    this.refs.presenceChannel.perform("kick_user", { user_id: id })
-  }
+  kickUser = id => this.refs.presenceChannel.perform("kick_user", { user_id: id })
 
   leaveChannel = () => {
     if (this.state.currentUserVideo.stream) {
@@ -313,11 +265,7 @@ class MessageWindow extends Component {
     });
   }
 
-  closeModal = () => {
-    this.setState({
-      modalOpen: false
-    })
-  }
+  closeModal = () => this.setState({ modalOpen: false })
 
   render() {
     const conversation = this.props.currentConversation
@@ -345,8 +293,8 @@ class MessageWindow extends Component {
     }
     return (
       <React.Fragment>
-
-      {this.props.currentUser.hasOwnProperty("id") && <React.Fragment>
+      {this.props.currentUser.hasOwnProperty("id") &&
+      <React.Fragment>
         <ActionCable ref="signalServer" channel={{channel:"SignalChannel", room: this.props.match.params.id, token:localStorage.jwt}} onReceived={this.handleReceive} onConnected={this.handleConnect}/>
         <ActionCable ref="presenceChannel" channel={{channel:"PresenceChannel", room: this.props.match.params.id, token:localStorage.jwt}} onReceived={this.handlePresenceReceive} onConnected={this.handlePresenceConnect}/>
       </React.Fragment>}
@@ -378,7 +326,6 @@ class MessageWindow extends Component {
               <Icon name="lock" size="small" style={{marginLeft:".3rem"}} />
             }
           />}
-          {/* <Header as="h4" style={{display:"inline"}}> */}
             <Dropdown pointing text={conversation.name}>
               <Dropdown.Menu>
                 <Dropdown.Item onClick={() => this.props.isFavorited ? this.props.removeFavorite(this.props.currentConversation.id) : this.props.addFavorite(this.props.currentConversation.id)}>
@@ -402,8 +349,6 @@ class MessageWindow extends Component {
               }
               </Dropdown.Menu>
             </Dropdown>
-            {/* {conversation.name ? conversation.name : conversation.users.map(userObj =>  userObj.username).join(', ')} */}
-          {/* </Header> */}
 
         </div>
 
@@ -436,40 +381,28 @@ class MessageWindow extends Component {
         </Segment>
 
         {this.state.currentUserVideo.stream || this.state.peerStreams.length > 0 ? (
-
-            <Segment inverted style={{ borderRadius:"0", display:"flex", margin:"0", flexDirection:"row", flexBasis:"auto", minHeight:"50vh", flexWrap:"wrap", alignItems:"center", alignContent: "center", justifyContent:"center", boxShadow:"inset 0 0 5px 1px rgb(0, 0, 0, 0.5)"}}>
-
-              {this.state.currentUserVideo.stream ? <div style={{textAlign:"center", padding:"1rem", flex:"1 1 20%", maxWidth:"36vw", minWidth:"10vw"}}>
-                <div style={{position:"relative"}}>
-              <video muted autoPlay={true} src={this.state.currentUserVideo.url} style={{borderRadius:"1%", boxShadow:"0 1px 5px #000", width:"100%"}}>
-              </video>
-            </div>
-              <div>{this.props.currentUser.username}</div>
-            </div> : null}
-            {this.state.peerStreams.map(p => (
-              <VideoPlayer stream={p.stream} username={this.state.currentUsers.find(c => c.id === p.id).username} />
-            ))}
-            </Segment>
+          <VideoContainer myStream={this.state.currentUserVideo} myUsername={this.props.currentUser.username} peerStreams={this.state.peerStreams} currentUsers={this.state.currentUsers} />
         ) : null}
-
           <div style={{flex:"1 1 100%", display:"flex"}}>
             <Ref innerRef={this.handleRef}>
-          <Comment.Group style={{padding:"1rem 1rem 1rem 1rem", flex:"1 1 auto", margin:"0", maxWidth:"100%", overflowY:"scroll"}}>
+              <Comment.Group style={{padding:"1rem 1rem 1rem 1rem", flex:"1 1 auto", margin:"0", maxWidth:"100%", overflowY:"scroll"}}>
 
-            {this.props.currentConversation.messages.map(message => <Message key={message.hasOwnProperty("is_whisper") ? message.created_at : message.id } message={message} isWhisper={message.hasOwnProperty("is_whisper")} isAuthor={message.hasOwnProperty("is_whisper") && message.is_whisper === "sent"}/>)}
-          </Comment.Group>
-        </Ref>
+                {this.props.currentConversation.messages.map(message => <Message key={message.hasOwnProperty("is_whisper") ? message.created_at : message.id } message={message} isWhisper={message.hasOwnProperty("is_whisper")} isAuthor={message.hasOwnProperty("is_whisper") && message.is_whisper === "sent"}/>)}
+              </Comment.Group>
+            </Ref>
         { this.state.showUserMenu ? <Menu inverted vertical fitted="vertically" borderless style={{marginLeft:"auto", flex:"0 0 auto", marginTop:"0", borderRadius:"0", height:"100%", borderLeft: "1px solid #999"}}>
           <Menu.Item header >Users</Menu.Item>
           {this.state.currentUsers.map(user => ( user.id === this.props.currentUser.id ? <Menu.Item key={user.id}  link>{user.username} {conversation.owner === user.username && <i style={{float:"right"}} className="fas fa-crown"></i>}</Menu.Item> :
             <Popup
               inverted
+              key={user.id}
               size="tiny"
               content={<Menu size="tiny" vertical inverted compact>
                 {this.props.currentConversation.is_admin && <Menu.Item onClick={() => this.kickUser(user.id)}>Kick</Menu.Item>}
-                <Menu.Item onClick={() => {this.setState({
-                message: `/whisper ${user.username}`
-              }, () => this.messageField.focus())}} link>Whisper</Menu.Item>
+                <Menu.Item onClick={() =>
+                {this.messageField.firstElementChild.value = `/whisper ${user.username}`;
+                this.messageField.firstElementChild.focus()}}
+                link>Whisper</Menu.Item>
             </Menu>}
               position="left center"
               on="click"
@@ -480,21 +413,7 @@ class MessageWindow extends Component {
 
         </Menu> : null}
       </div>
-
-        <Segment secondary style={{borderRadius:"0", flex:"0 0 auto", marginTop:"0", width:"100%"}}>
-          <form onSubmit={this.handleSubmit}>
-          <Input fluid
-            ref={el => this.messageField = el}
-            disabled={this.state.isLoading}
-            action={{color:'pink', content:'Send'}}
-            icon='chat'
-            iconPosition='left'
-            placeholder="Send a message..."
-            onChange={this.handleChange}
-            value={this.state.message}
-            ></Input>
-          </form>
-        </Segment>
+      <MessageForm peers={this.peers} currentUsers={this.state.currentUsers} setMessageInputRef={this.setMessageInputRef}/>
       </div>
     </React.Fragment>
     );
@@ -512,7 +431,6 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    sendMessage: (message) => dispatch(sendMessage(message)),
     addMessage: (action) => dispatch(action),
     addWhisper: (body) => dispatch({ type: "ADD_MESSAGE", payload: body }),
     removeCurrentConversation: () => dispatch(setCurrentConversation({ messages: [] })),
@@ -523,4 +441,4 @@ const mapDispatchToProps = (dispatch) => {
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(MessageWindow);
+export default connect(mapStateToProps, mapDispatchToProps)(ChannelPage);

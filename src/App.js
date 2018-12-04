@@ -3,7 +3,7 @@ import { BrowserRouter, Route } from 'react-router-dom';
 import Login from './Login';
 import SignUp from './Login/SignUp';
 import MainContainer from './Main';
-import MessageWindow from './MessageWindow';
+import ChannelPage from './ChannelPage';
 import { connect } from 'react-redux';
 import { getCurrentUser } from './store';
 import { ActionCableProvider } from 'react-actioncable-provider';
@@ -25,7 +25,7 @@ class App extends Component {
           <Route path="/signup" component={SignUp} />
                 {/* <ActionCableProvider url="wss://outroar-backend.herokuapp.com/cable"> */}
                 <ActionCableProvider url="ws://localhost:3000/cable">
-                <Route path="/channels/:id" component={MessageWindow} />
+                <Route path="/channels/:id" component={ChannelPage} />
               </ActionCableProvider>
       </div>
     </BrowserRouter>
