@@ -3,6 +3,7 @@ import { Dropdown, Menu, List, Popup, Input, Icon, Container, Header, Loader } f
 import SearchListing from './SearchListing';
 import { connect } from 'react-redux';
 import { setUser, changeColor } from '../store';
+import { loadingPhrases } from '../loadingPhrases';
 import debounce from 'lodash/debounce';
 import { Redirect } from 'react-router-dom';
 import { getRandom, getSplash, getPopular, searchConversations, postConversation } from '../store/actions/adapter';
@@ -70,13 +71,10 @@ class MainContainer extends Component {
 
   randomChannel = () => {
     getRandom()
-      // .then(res => console.log(res))
       .then(res => this.props.history.push(`/channels/${res.id}`))
   }
 
   handleColorChange = (color) => {
-    // console.log(e.target.innerText.toLowerCase())
-    // console.dir(color)
     this.props.changeColor(color)
   }
 
@@ -127,7 +125,6 @@ class MainContainer extends Component {
   }
 
   render() {
-    const loadingPhrases = ["Reticulating Splines...", "Loading...", "Perturbing Matrices...", "Destabilizing Orbital Payloads...", "Inserting Chaos Generator..."]
     const { currentlyViewing, isSearchLoading, isLoading, isSearching, search, channels } = this.state
     const viewingFavorites = !!(currentlyViewing === "favorites")
     const viewingPopular = !!(currentlyViewing === "popular")
@@ -245,7 +242,7 @@ class MainContainer extends Component {
 
 const mapStateToProps = (state) => {
   return {
-    currentUser: state.user
+    currentUser: state.currentUser
   }
 }
 

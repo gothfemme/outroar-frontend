@@ -1,28 +1,23 @@
 import React, { Component } from 'react';
-import { Segment, Input, Ref } from 'semantic-ui-react';
+import { Segment, Input } from 'semantic-ui-react';
 import { connect } from 'react-redux';
-import { sendMessage } from '../store';
+import { sendMessage, setMessageFormText } from '../store';
 
 class MessageForm extends Component {
-  state = {
-    message: ""
-  }
 
   handleSubmit = (e) => {
     e.preventDefault()
     const newMessage = {
-      content: this.state.message,
+      content: this.props.messageForm,
       conversation_id: this.props.currentConversation.id
     }
-    this.setState({
-      message: ""
-    });
+
     if (newMessage.content.match(/^\/\w+\b/)) {
       switch (newMessage.content.match(/^\/\w+\b/)[0]) {
         case "/whisper":
           let arr = newMessage.content.split(/\s+/)
           if (arr[1]) {
-            let user = this.props.currentUsers.find(u => u.username === arr[1])
+            let user = this.props.channelSettings.currentUsers.find(u => u.username === arr[1])
             if (user && this.props.peers[user.id]) {
               let whisper = { is_whisper: "received", created_at: Date.now(), user: { id: this.props.currentUser.id, username: this.props.currentUser.username, color: this.props.currentUser.color }, content: arr.slice(2).join(" ") }
               this.props.peers[user.id].send(JSON.stringify(whisper))
@@ -43,24 +38,23 @@ class MessageForm extends Component {
           })
         })
     }
+    this.props.setMessageFormText('')
   }
 
-  handleChange = e => this.setState({ message: e.target.value });
+  handleChange = e => this.props.setMessageFormText(e.target.value);
 
   render() {
     return (
       <Segment secondary style = { { borderRadius: "0", flex: "0 0 auto", marginTop: "0", width: "100%" } } >
       <form onSubmit={this.handleSubmit}>
-        <Ref innerRef={this.props.setMessageInputRef}>
           <Input fluid
             action={{color:'pink', content:'Send'}}
             icon='chat'
             iconPosition='left'
             placeholder="Send a message..."
             onChange={this.handleChange}
-            value={this.state.message}
+            value={this.props.messageForm}
             ></Input>
-        </Ref>
       </form>
     </Segment>
     );
@@ -69,15 +63,18 @@ class MessageForm extends Component {
 
 const mapStateToProps = (state) => {
   return {
-    currentUser: state.user,
-    currentConversation: state.currentConversation
+    currentUser: state.currentUser,
+    currentConversation: state.currentConversation,
+    channelSettings: state.channelSettings,
+    messageForm: state.messageForm
   }
 }
 
 const mapDispatchToProps = (dispatch) => {
   return {
     sendMessage: (message) => dispatch(sendMessage(message)),
-    addWhisper: (body) => dispatch({ type: "ADD_MESSAGE", payload: body })
+    addWhisper: (body) => dispatch({ type: "ADD_MESSAGE", payload: body }),
+    setMessageFormText: (text) => dispatch(setMessageFormText(text))
   }
 }
 

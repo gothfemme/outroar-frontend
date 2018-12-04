@@ -2,7 +2,7 @@ import React from 'react';
 import { Segment } from 'semantic-ui-react';
 import VideoPlayer from './VideoPlayer';
 
-const VideoContainer = ({ peerStreams, myStream, currentUsers, myUsername }) => (
+const VideoContainer = ({ myStream, currentUsers, myUsername }) => (
   <Segment inverted style={{ borderRadius:"0", display:"flex", margin:"0", flexDirection:"row", flexBasis:"auto", minHeight:"50vh", flexWrap:"wrap", alignItems:"center", alignContent: "center", justifyContent:"center", boxShadow:"inset 0 0 5px 1px rgb(0, 0, 0, 0.5)"}}>
     {myStream.stream &&
       <div style={{textAlign:"center", padding:"1rem", flex:"1 1 20%", maxWidth:"36vw", minWidth:"10vw"}}>
@@ -13,7 +13,7 @@ const VideoContainer = ({ peerStreams, myStream, currentUsers, myUsername }) => 
         <div>{myUsername}</div>
       </div>
     }
-  {peerStreams.map(p => <VideoPlayer stream={p.stream} username={currentUsers.find(c => c.id === p.id).username}/>)}
+  {currentUsers.filter(u => u.stream).map(p => <VideoPlayer key={p.id} stream={p.stream} username={p.username}/>)}
   </Segment>
 );
 

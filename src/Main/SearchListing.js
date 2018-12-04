@@ -10,7 +10,7 @@ const SearchListing = ({ channel, isFavorited, addFavorite, removeFavorite }) =>
     <List.Item>
         <List.Icon
           link
-          onClick={() => isFavorited ? removeFavorite(this.props.channel.id) : addFavorite(channel.id)}
+          onClick={() => isFavorited ? removeFavorite(channel.id) : addFavorite(channel.id)}
           color={isFavorited ? "yellow" : "grey"}
           name={`star${isFavorited ? "" : " outline"}`}
           size='large'
@@ -26,7 +26,7 @@ const SearchListing = ({ channel, isFavorited, addFavorite, removeFavorite }) =>
 
 const mapStateToProps = (state, ownProps) => {
   return {
-    isFavorited: state.user.favorite_channels.includes(ownProps.channel.id)
+    isFavorited: state.currentUser.favorite_channels.includes(ownProps.channel.id)
   }
 }
 

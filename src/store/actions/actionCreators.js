@@ -9,6 +9,13 @@ export const setUser = (user) => {
   }
 }
 
+export const setMessageFormText = (text) => {
+  return {
+    type: "SET_MESSAGE_FORM_TEXT",
+    payload: text
+  }
+}
+
 const changeColorInStore = (color) => {
   return {
     type: "CHANGE_COLOR",
