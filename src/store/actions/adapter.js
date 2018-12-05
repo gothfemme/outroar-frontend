@@ -100,6 +100,7 @@ export const getSplash = () => {
     }
   }
   return fetch(`${BASEURL}splash`, opts)
+    .then(checkError)
     .then(r => r.json())
 }
 

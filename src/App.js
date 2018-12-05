@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { BrowserRouter, Route } from 'react-router-dom';
+import { BrowserRouter, Route, withRouter } from 'react-router-dom';
 import Login from './Login';
 import SignUp from './Login/SignUp';
 import MainContainer from './Main';
@@ -16,6 +16,7 @@ class App extends Component {
         .catch(error => {
           localStorage.clear()
           this.props.history.push('/login')
+          return undefined
         })
     }
   }
@@ -41,4 +42,4 @@ const mapDispatchToProps = (dispatch) => {
   return { getCurrentUser: () => dispatch(getCurrentUser()) }
 }
 
-export default connect(null, mapDispatchToProps)(App);
+export default withRouter(connect(null, mapDispatchToProps)(App));

@@ -28,6 +28,7 @@ class MainContainer extends Component {
             currentlyViewing: "favorites"
           })
         })
+        .catch(error => undefined)
     }
   }
 
