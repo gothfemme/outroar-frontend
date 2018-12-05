@@ -221,6 +221,7 @@ export const fetchCurrentUser = () => {
     }
   }
   return fetch(`${BASEURL}current`, opts)
+    .then(checkError)
     .then(r => r.json())
 }
 
