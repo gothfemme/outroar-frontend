@@ -10,7 +10,7 @@ import { ActionCableProvider } from 'react-actioncable-provider';
 
 class App extends Component {
 
-  componentDidMount() {
+  componentDidMount = () => {
     if (localStorage.jwt) {
       this.props.getCurrentUser()
         .catch(error => {
