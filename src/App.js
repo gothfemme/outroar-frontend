@@ -13,7 +13,7 @@ class App extends Component {
   componentDidMount() {
     if (localStorage.jwt) {
       this.props.getCurrentUser()
-        .catch(function(error) {
+        .catch(error => {
           localStorage.clear()
           this.props.history.push('/login')
         })
