@@ -28,8 +28,8 @@ class App extends Component {
         <Route exact path="/" component={MainContainer}/>
           <Route path="/login" component={Login} />
           <Route path="/signup" component={SignUp} />
-                <ActionCableProvider url="wss://outroar-backend.herokuapp.com/cable">
-                {/* <ActionCableProvider url="ws://localhost:3000/cable"> */}
+                {/* <ActionCableProvider url="wss://outroar-backend.herokuapp.com/cable"> */}
+                <ActionCableProvider url="ws://localhost:3000/cable">
                 <Route path="/channels/:id" component={ChannelPage} />
               </ActionCableProvider>
       </div>

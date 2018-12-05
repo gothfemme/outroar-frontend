@@ -26,8 +26,12 @@ export default function channel(state = initialState, action) {
       return { ...state, currentUsers: [...state.currentUsers.filter(u => u.id !== action.payload)] }
     case "SET_PEER_STREAM":
       let user = state.currentUsers.find(u => u.id === action.payload.id)
-      user = { ...user, stream: action.payload.stream }
-      return { ...state, currentUsers: [...state.currentUsers.filter(p => p.id !== action.payload.id), user] }
+      console.log(user)
+      if (user) {
+        user = { ...user, stream: (action.payload.stream ? window.URL.createObjectURL(action.payload.stream) : action.payload.stream) }
+        return { ...state, currentUsers: [...state.currentUsers.filter(p => p.id !== action.payload.id), user] }
+      }
+      return state
     case "SET_MUTE":
       return { ...state, isMuted: action.payload }
     case "SET_MODAL":

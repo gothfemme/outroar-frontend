@@ -88,7 +88,7 @@ class ChannelPage extends Component {
         this.props.addMessage(JSON.parse(raw.toString()))
       })
       peer.on('stream', stream => {
-        this.props.setPeerStream(resp.from, window.URL.createObjectURL(stream))
+        this.props.setPeerStream(resp.from, stream)
       })
       peer.on('close', () => console.log('closed peer'))
       peer.on('error', (error) => {
@@ -234,7 +234,7 @@ const mapDispatchToProps = (dispatch) => {
     getCurrentConversation: (id) => dispatch(getCurrentConversation(id)),
     addChannelUser: user => dispatch(addChannelUser(user)),
     removeChannelUser: id => dispatch(removeChannelUser(id)),
-    setPeerStream: (stream, id) => dispatch(setPeerStream(stream, id))
+    setPeerStream: (id, stream) => dispatch(setPeerStream(id, stream))
   }
 }
 
