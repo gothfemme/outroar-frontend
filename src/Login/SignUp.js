@@ -44,9 +44,16 @@ class SignUp extends Component {
       <Container style={{height:"100vh"}}>
         <Grid textAlign='center' style={{ height: '100%' }} verticalAlign='middle'>
           <Grid.Column style={{ maxWidth: 450 }}>
-            <Header as="h1" style={{fontFamily: "'Fredoka One', cursive"}}>
+            <Popup
+              position="top center"
+              inverted
+              wide="very"
+              content="A peer-to-peer video chat application."
+              trigger={
+            <Header color="pink" style={{ cursor:"default", fontFamily: "'Fredoka One', cursive", fontSize:"3rem" }}>
               outroar
             </Header>
+          } />
             <Segment>
         <Form onSubmit={this.handleSubmit}>
           <Popup
