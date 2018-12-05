@@ -105,12 +105,11 @@ export const getCurrentConversation = (id) => {
 
 export const getCurrentUser = () => {
   return (dispatch) => {
-    fetchCurrentUser()
+    return fetchCurrentUser()
       .then(resp => {
         dispatch(setUser(resp))
         // return resp.token
       })
-      .catch(console.error)
   }
 }
 
