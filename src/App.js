@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { BrowserRouter, Route, withRouter } from 'react-router-dom';
+import { Route, withRouter } from 'react-router-dom';
 import Login from './Login';
 import SignUp from './Login/SignUp';
 import MainContainer from './Main';
@@ -23,7 +23,7 @@ class App extends Component {
 
   render() {
     return (
-      <BrowserRouter>
+
       <div>
         <Route exact path="/" component={MainContainer}/>
           <Route path="/login" component={Login} />
@@ -33,7 +33,6 @@ class App extends Component {
                 <Route path="/channels/:id" component={ChannelPage} />
               </ActionCableProvider>
       </div>
-    </BrowserRouter>
     );
   }
 }
