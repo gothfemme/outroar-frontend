@@ -175,7 +175,7 @@ class MainContainer extends Component {
               {/* </div> */}
               <Header color="pink" style={{fontFamily: "'Fredoka One', cursive", paddingTop:"10vh", fontSize:"5rem"}}>outroar</Header>
               <Container style={{textAlign:"center"}}>
-                <Input  input={<input onChange={this.handleChange} value={search}></input>} loading={isSearchLoading} icon="search" style={{width:"35vw", marginRight:"1rem"}} placeholder="Find a channel..."></Input>
+                <Input  input={<input onChange={this.handleChange} value={search}></input>} loading={isSearchLoading} icon="search" style={{width:"35vw", marginRight:"1rem"}} placeholder="Find or create a channel..."></Input>
                 <Popup
                   content="Favorites"
                   trigger={<Icon link onClick={() => this.toggleView("favorites")} color={viewingFavorites ? "yellow" : "grey"} size="big" style={{ verticalAlign:"-0.25rem", marginRight:".5rem",cursor:"pointer" }} name={viewingFavorites ? "star" : "star outline"} />}
