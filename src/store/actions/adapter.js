@@ -1,5 +1,5 @@
-// const BASEURL = 'https://outroar-backend.herokuapp.com/'
-const BASEURL = 'http://localhost:3000/'
+const BASEURL = 'https://outroar-backend.herokuapp.com/'
+// const BASEURL = 'http://localhost:3000/'
 
 function checkError(res) {
   if (res.ok) {
