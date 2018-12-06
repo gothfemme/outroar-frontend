@@ -33,8 +33,7 @@ class ChannelPage extends Component {
           isLoading: false
         }))
         .catch(async (error) => {
-          const err = await error.json()
-          console.log(err)
+          // const err = await error.json()
           this.setState({
             isLoading: false,
             loadErr: true
@@ -45,7 +44,6 @@ class ChannelPage extends Component {
   }
 
   handleReceive = (resp) => {
-    console.log(resp)
     if (resp.action === "send_signal") {
       this.peers[resp.from] = this.createResponsePeer(resp)
       setTimeout(() => {
@@ -58,7 +56,7 @@ class ChannelPage extends Component {
   }
 
   createSignalingPeer = (id) => {
-    let peer = new Peer({ initiator: true, trickle: true, stream: this.props.channelSettings.myStream.stream })
+    let peer = new Peer({ initiator: true, trickle: false, stream: this.props.channelSettings.myStream.stream })
     peer.on('signal', data => {
       this.refs.signalServer.perform('send_signal', { payload: data, to: id })
     })
@@ -68,7 +66,7 @@ class ChannelPage extends Component {
   createResponsePeer = (resp) => {
     let peer = this.peers[resp.from]
     if (!peer) {
-      peer = Peer({ initiator: false, trickle: true, stream: this.props.channelSettings.myStream.stream })
+      peer = Peer({ initiator: false, trickle: false, stream: this.props.channelSettings.myStream.stream })
       peer.on('signal', data => {
         this.refs.signalServer.perform('send_signal', { payload: data, to: resp.from })
       })
@@ -120,7 +118,6 @@ class ChannelPage extends Component {
           this.refs.presenceChannel.perform("initial_presence", { username: this.props.currentUser.username, user_id: this.props.currentUser.id })
           this.peers[resp.user_id] = this.createSignalingPeer(resp.user_id)
           setTimeout(() => {
-            console.log("initiating peer timeout", this.peers)
             if (this.peers[resp.user_id] && !this.peers[resp.user_id].connected) {
               delete this.peers[resp.user_id]
               if (this.props.channelSettings.currentUsers.find(u => u.id === resp.user_id)) {
