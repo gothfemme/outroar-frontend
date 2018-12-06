@@ -48,7 +48,7 @@ class MessageForm extends Component {
       <Segment secondary style = { { borderRadius: "0", flex: "0 0 auto", marginTop: "0", width: "100%" } } >
       <form onSubmit={this.handleSubmit}>
           <Input fluid
-            action={{color:'pink', content:'Send'}}
+            action={{color:'pink', content:'Send', disabled: this.props.messageForm.length >= 400}}
             icon='chat'
             iconPosition='left'
             placeholder="Send a message..."

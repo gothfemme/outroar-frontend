@@ -188,7 +188,7 @@ class ChannelPage extends Component {
       </div>
     }
     if (!this.state.isLoading && this.props.currentConversation.showLogin && !this.props.currentConversation.is_admin) {
-      return <ChannelLogin />
+      return <ChannelLogin leaveChannel={this.leaveChannel}/>
     }
     return (
       <React.Fragment>

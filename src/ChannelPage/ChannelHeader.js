@@ -18,6 +18,7 @@ class ChannelHeader extends Component {
     }
     navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       .then(stream => {
+        this.props.setMute(false)
         this.props.setMyStream(stream, window.URL.createObjectURL(stream))
         Object.values(this.props.peers).forEach(peer => {
           if (peer.connected) {
