@@ -58,7 +58,7 @@ class ChannelPage extends Component {
   }
 
   createSignalingPeer = (id) => {
-    let peer = new Peer({ initiator: true, trickle: false, stream: this.props.channelSettings.myStream.stream })
+    let peer = new Peer({ initiator: true, trickle: true, stream: this.props.channelSettings.myStream.stream })
     peer.on('signal', data => {
       this.refs.signalServer.perform('send_signal', { payload: data, to: id })
     })
@@ -68,7 +68,7 @@ class ChannelPage extends Component {
   createResponsePeer = (resp) => {
     let peer = this.peers[resp.from]
     if (!peer) {
-      peer = Peer({ initiator: false, trickle: false, stream: this.props.channelSettings.myStream.stream })
+      peer = Peer({ initiator: false, trickle: true, stream: this.props.channelSettings.myStream.stream })
       peer.on('signal', data => {
         this.refs.signalServer.perform('send_signal', { payload: data, to: resp.from })
       })
