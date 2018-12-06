@@ -28,7 +28,7 @@ export default function channel(state = initialState, action) {
       let user = state.currentUsers.find(u => u.id === action.payload.id)
       console.log(user)
       if (user) {
-        user = { ...user, stream: (action.payload.stream ? window.URL.createObjectURL(action.payload.stream) : action.payload.stream) }
+        user = { ...user, stream: action.payload.stream }
         return { ...state, currentUsers: [...state.currentUsers.filter(p => p.id !== action.payload.id), user] }
       }
       return state
