@@ -131,7 +131,7 @@ class ChannelPage extends Component {
         }
         break;
       case "initial_presence":
-        if (resp.user_id !== this.props.currentUser.id) {
+        if (resp.user_id !== this.props.currentUser.id && !this.props.currentUsers.find(u => u.id === resp.user_id)) {
           this.props.addChannelUser({ username: resp.username, id: resp.user_id, stream: null })
         }
         break;
