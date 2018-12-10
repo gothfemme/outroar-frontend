@@ -44,7 +44,7 @@ Kat Michaela – [@gothfemme](https://twitter.com/gothfemme) – k@gothfem.me - 
 
 ## Contributing
 
-1. Fork it (<https://github.com/gothfemme/ouroar-frontend/fork>)
+1. Fork it (<https://github.com/gothfemme/outroar-frontend/fork>)
 2. Create your feature branch (`git checkout -b feature/fooBar`)
 3. Commit your changes (`git commit -am 'Add some fooBar'`)
 4. Push to the branch (`git push origin feature/fooBar`)
