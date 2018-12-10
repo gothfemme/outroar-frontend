@@ -11,7 +11,7 @@ This is the frontend, the backend can be found [here](https://github.com/gothfem
 
 ### Frontend
 
-_Before starting, you will have to change the BASE_URL constant in /src/store/actions/adapter.js and the ActionCable url in /src/App.js to point to your own backend._
+_Before starting, you will have to change the `BASE_URL` constant in `/src/store/actions/adapter.js` and the ActionCable url in `/src/App.js` to point to your own backend._
 
 OS X & Linux:
 
