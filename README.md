@@ -1,6 +1,8 @@
 # outroar
 > A peer to peer video chat application, allowing for multiple users to chat in real-time.
 
+[Video Demo](https://www.youtube.com/watch?v=SbmwHn9Asgs)
+
 [Live Demo](https://outroar-app.herokuapp.com/)
 
 This is a video chat app, built on React and Redux for the frontend, and Rails as an API backend. It utilizes webRTC for peer-to-peer data streaming, allowing for real-time communications over text, voice, and video with multiple users at once. It also uses an ActionCable websocket for webRTC signaling, and for other chat features (live user presence, admin actions, etc). You can create an account, with passwords saved in an encrypted form on the database due to the bcrypt gem, and client-to-server auth using JWT.
